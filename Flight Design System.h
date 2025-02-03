@@ -20,6 +20,7 @@ program. If not, see <https://www.gnu.org/licenses/>.
 #include <wx/wx.h>
 #include <wx/bookctrl.h>
 #include <wx/listctrl.h>
+#include <wx/grid.h>
 
 class Core;
 
@@ -53,6 +54,7 @@ public:
     void CalculateDayOfYear(wxCommandEvent& event);
     void OnButton_LWP_LVDC_Export(wxCommandEvent& event);
     void OnButton_View_MCT(wxCommandEvent& event);
+    void OnButton_Save_MCT(wxCommandEvent& event);
 private:
 
     void AddConfigPage();
@@ -124,7 +126,7 @@ private:
     wxTextCtrl* textOMP_Chaser;
     wxTextCtrl* textOMP_Target;
     wxTextCtrl* textOMP_MCT;
-    wxListCtrl* textOMP_MCT_Viewer;
+    wxGrid* textOMP_MCT_Editor;
 
     //Skylab LWP page
     wxTextCtrl* textSkylabLWP_TargetVector;

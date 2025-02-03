@@ -1,0 +1,7 @@
+Name;Type;Threshold;Value;Secondary 1;Secondary 2;Secondary 3;Secondary 4;Secondary 5;Secondary 6;Secondary 7;Secondary 8;Secondary 9
+NC-1;NC;T;000:00:20:00.000;APO=2.0
+NC-2;NH;M;1.5
+NCC;NH;M;0.5;DH=20.0
+NSR;NSR;DT;000:00:37:00.000;DH=10.0
+TPI;TPI;T;000:07:03:00.000;ELA=27.0;LITI=-23.0
+TPF;TPF;WT;130

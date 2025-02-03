@@ -48,7 +48,8 @@ enum
     ID_Button_SV_New,
     wxID_StateVectorRawData,
     ID_Button_LWP_LVDC_Export,
-    ID_Button_MCT_View
+    ID_Button_MCT_View,
+    ID_Button_MCT_Save
 };
 
 BEGIN_EVENT_TABLE(MyFrame, wxFrame)
@@ -70,6 +71,7 @@ EVT_TEXT(ID_TextBox_Month, MyFrame::CalculateDayOfYear)
 EVT_TEXT(ID_TextBox_Day, MyFrame::CalculateDayOfYear)
 EVT_BUTTON(ID_Button_LWP_LVDC_Export, MyFrame::OnButton_LWP_LVDC_Export)
 EVT_BUTTON(ID_Button_MCT_View, MyFrame::OnButton_View_MCT)
+EVT_BUTTON(ID_Button_MCT_Save, MyFrame::OnButton_Save_MCT)
 END_EVENT_TABLE()
 
 bool MyApp::OnInit()
@@ -526,20 +528,37 @@ void MyFrame::AddOMPPage()
 
     //MCT
     new wxStaticText(panel3, wxID_ANY, "Maneuver Constraints Table", wxPoint(500, 10));
-    wxPanel *temp = new wxPanel(panel3, wxID_ANY, wxPoint(400, 60), wxSize(500, 300), wxBORDER_SIMPLE);
+    wxPanel *temp = new wxPanel(panel3, wxID_ANY, wxPoint(400, 40), wxSize(550, 300), wxBORDER_SIMPLE);
 
-    textOMP_MCT_Viewer = new wxListCtrl(temp, wxID_ANY, wxDefaultPosition, wxSize(500, 300), wxLC_REPORT | wxLC_SINGLE_SEL | wxLC_HRULES | wxLC_VRULES);
+    textOMP_MCT_Editor = new wxGrid(temp, wxID_ANY, wxDefaultPosition, wxSize(550, 300));
 
-    wxFont font = textOMP_MCT_Viewer->GetFont();
-    font.SetFamily(wxFONTFAMILY_TELETYPE);
-    textOMP_MCT_Viewer->SetFont(font);
+    textOMP_MCT_Editor->CreateGrid(41, 13);
+    textOMP_MCT_Editor->SetCellValue(0, 0, wxT("Name"));
+    textOMP_MCT_Editor->SetCellValue(0, 1, wxT("Type"));
+    textOMP_MCT_Editor->SetCellValue(0, 2, wxT("Threshold"));
+    textOMP_MCT_Editor->SetCellValue(0, 3, wxT("Value"));
+    textOMP_MCT_Editor->SetCellValue(0, 4, wxT("Secondary 1"));
+    textOMP_MCT_Editor->SetCellValue(0, 5, wxT("Secondary 2"));
+    textOMP_MCT_Editor->SetCellValue(0, 6, wxT("Secondary 3"));
+    textOMP_MCT_Editor->SetCellValue(0, 7, wxT("Secondary 4"));
+    textOMP_MCT_Editor->SetCellValue(0, 8, wxT("Secondary 5"));
+    textOMP_MCT_Editor->SetCellValue(0, 9, wxT("Secondary 6"));
+    textOMP_MCT_Editor->SetCellValue(0, 10, wxT("Secondary 7"));
+    textOMP_MCT_Editor->SetCellValue(0, 11, wxT("Secondary 8"));
+    textOMP_MCT_Editor->SetCellValue(0, 12, wxT("Secondary 9"));
 
-    textOMP_MCT_Viewer->AppendColumn("MANEUVER");
-    textOMP_MCT_Viewer->SetColumnWidth(0, 100);
-    textOMP_MCT_Viewer->AppendColumn("THRESHOLD");
-    textOMP_MCT_Viewer->SetColumnWidth(1, 150);
-    textOMP_MCT_Viewer->AppendColumn("SECONDARIES");
-    textOMP_MCT_Viewer->SetColumnWidth(2, 250);
+    for (int i = 0; i < 13; i++)
+    {
+        textOMP_MCT_Editor->SetReadOnly(0, i);
+    }
+
+    textOMP_MCT_Editor->SetColSize(0, 50);
+    textOMP_MCT_Editor->SetColSize(1, 50);
+    textOMP_MCT_Editor->SetColSize(2, 60);
+    textOMP_MCT_Editor->SetColSize(3, 95);
+
+    new wxButton(panel3, ID_Button_MCT_Save, wxT("Save"),
+        wxPoint(450, 414), wxDefaultSize);
 }
 
 void MyFrame::AddSkylabLWPPage()
@@ -1658,7 +1677,7 @@ void MyFrame::UpdateOrbitData()
 
     str = wxString::Format(wxT("%.0lf"), age / 3600.0);
 
-    textStateVectorOrbitData->AppendText("State vector is " +  str + " hours old (from midnight)\n");
+    textStateVectorOrbitData->AppendText("Time from midnight to state vector is " +  str + " hours\n");
 }
 
 void MyFrame::StateVectorRawDataEnter(wxCommandEvent& event)
@@ -1762,57 +1781,89 @@ void MyFrame::OnButton_View_MCT(wxCommandEvent& event)
         return;
     }
 
-    textOMP_MCT_Viewer->DeleteAllItems();
-
-
     wxString arr, token;
-    size_t i;
-    int j;
-
     wxStringTokenizer tkz;
-
-    for (i = 1; i < file.GetLineCount(); i++)
+    unsigned i, j;
+   
+    for (i = 0; i < file.GetLineCount(); i++)
     {
         tkz.SetString(file[i], ";");
-
-        textOMP_MCT_Viewer->InsertItem(i - 1, "");
 
         j = 0;
         while (tkz.HasMoreTokens())
         {
             token = tkz.GetNextToken();
 
-            switch (j)
-            {
-            case 0: //Maneuver name
-                arr = wxString::Format(wxT("%i"), i);
-                arr += " ";
-                arr += token;
-                arr += "\n";
-                break;
-            case 1: //Maneuver type
-                arr += " ";
-                arr += token;
-                textOMP_MCT_Viewer->SetItem(i - 1, 0, arr);
-                break;
-            case 2: //Threshold type
-                arr = token;
-                break;
-            case 3: //Threshold number
-                arr += " ";
-                arr += token;
-                textOMP_MCT_Viewer->SetItem(i - 1, 1, arr);
-                arr = ""; //Reset for secondaries
-                break;
-            default: //Secondaries
-                arr += token;
-                arr += " ";
-                textOMP_MCT_Viewer->SetItem(i - 1, 2, arr);
-                break;
-            }
+            textOMP_MCT_Editor->SetCellValue(i, j, token);
+
             j++;
+            if (j >= 9) break;
+        }
+        if (i >= 40) break;
+    }
+
+    file.Close();
+}
+
+void MyFrame::OnButton_Save_MCT(wxCommandEvent& event)
+{
+    std::string line;
+    std::vector<std::string> array;
+
+    unsigned i, j;
+
+    for (i = 0; i < 40; i++)
+    {
+        if (textOMP_MCT_Editor->GetCellValue(i, 0) == "") break;
+
+        line.clear();
+        for (j = 0; j < 13; j++)
+        {
+            if (textOMP_MCT_Editor->GetCellValue(i, j) != "")
+            {
+                if (j != 0)
+                {
+                    line += ";";
+                }
+                line += textOMP_MCT_Editor->GetCellValue(i, j);
+            }
+            else break;
+        }
+        array.push_back(line);
+    }
+
+    wxString str = textOMP_MCT->GetLineText(0);
+    wxString project = textProjectFile->GetLineText(0);
+    wxString path = "Projects/" + project + "/";
+    wxString filepath = path + str;
+
+    if (wxFile::Exists(filepath))
+    {
+        wxMessageDialog dialog(NULL, wxT("The file already exists. Overwrite?"),
+            wxT("Save file"),
+            wxNO_DEFAULT | wxYES_NO);
+
+        switch (dialog.ShowModal())
+        {
+        case wxID_YES:
+            break;
+        default:
+            return;
         }
     }
 
-    //textOMP_MCT_Viewer->ChangeValue(arr);
+    //Write to file
+    wxTextFile file(filepath);
+    if (!file.Open())
+        return;
+
+    file.Clear();
+
+    for (i = 0; i < array.size(); i++)
+    {
+        file.AddLine(array[i]);
+    }
+
+    file.Write();
+    file.Close();
 }

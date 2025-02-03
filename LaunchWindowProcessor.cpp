@@ -748,12 +748,13 @@ namespace LWP
 								Error = -1;
 								return;
 							}
-						} while (abs(ANGLE) < lwpconst.tol_trans_ang);
+						} while (abs(ANGLE) > lwpconst.tol_trans_ang);
 						inp.LOT = 1;
 						break;
 					case 3:
 					case 4:
 						common.GMTLO = common.GSTAR + inp.BIAS;
+						NSERT(common.GMTLO);
 						inp.LOT = 1;
 						break;
 					}
@@ -767,6 +768,7 @@ namespace LWP
 						if (inp.INSCO == 2)
 						{
 							//Advance target state vector
+							UPDAT(false, sv_C.GMT);
 							double DHA = length(sv_T.R) - length(sv_C.R);
 							DALT = DHA - inp.DHW;
 						}
@@ -1105,8 +1107,10 @@ namespace LWP
 
 	double LaunchWindowProcessor::PHANG(bool wrapped) const
 	{
+		//wrapped: false = -180 to 180°, true = based on NEGTIV and WRAP
 		double PA;
 		PA = OrbMech::PHSANG(sv_T.R, sv_T.V, sv_C.R);
+		if (wrapped == false) return PA;
 
 		if (inp.NEGTIV == 0)
 		{

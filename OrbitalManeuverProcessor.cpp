@@ -2642,11 +2642,11 @@ void OrbitalManeuverProcessor::GetOMPError(int err, std::string &buf, unsigned i
 	//New
 	switch (err)
 	{
-	case 1:		buf = "Error: no maneuvers in constraint table";		break;
-	case 2:		buf = "Error: first maneuver needs a T as threshold";	break;
-	case 3:		buf = "Error: not enough DV components specified";		break;
-	case 4:		buf = "Error: too many DV components specified";		break;
-	case 32:	buf = "Wrong vehicle code in VFIL secondary";			break;
+	case 1:		buf = "Error: No maneuvers in constraint table";		break;
+	case 2:		buf = "Error: First maneuver needs a T as threshold";	break;
+	case 3:		buf = "Error: Not enough DV components specified";		break;
+	case 4:		buf = "Error: Too many DV components specified";		break;
+	case 32:	buf = "Error: Wrong vehicle code in VFIL secondary";	break;
 	case 1001:	buf = "Error: Trajectory became reentrant.";			break;
 	case 1002:	buf = "Error: Kepler error in integrator.";				break;
 	case 2003:	buf = "Error parsing MCT, threshold type of maneuver " + std::to_string(i + 1) + " illegal";		break;
