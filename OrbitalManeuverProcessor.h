@@ -273,7 +273,6 @@ namespace OMP
 		unsigned int CurMan;
 		size_t TAB;
 		std::vector<ITERCONSTR> iterators;
-		ITERCONSTR con;
 		OrbMech::StateVector sv_cur, sv_P_cur;
 		std::vector<OMPManeuverArray> ManeuverData;
 

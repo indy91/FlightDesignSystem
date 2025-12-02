@@ -251,6 +251,7 @@ int OrbitalManeuverProcessor::CalculateOMPPlan(const OMPInputs& in)
 
 int OrbitalManeuverProcessor::ProcessIterators()
 {
+	ITERCONSTR con;
 	unsigned int i, j, k;
 	int found;
 	bool npcflag = false;
