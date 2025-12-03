@@ -48,6 +48,7 @@ enum
     ID_Button_SV_New,
     wxID_StateVectorRawData,
     ID_Button_LWP_LVDC_Export,
+    ID_Button_LWP_SSV_Export,
     ID_Button_MCT_View,
     ID_Button_MCT_Save
 };
@@ -70,6 +71,7 @@ EVT_TEXT(ID_TextBox_Year, MyFrame::CalculateDayOfYear)
 EVT_TEXT(ID_TextBox_Month, MyFrame::CalculateDayOfYear)
 EVT_TEXT(ID_TextBox_Day, MyFrame::CalculateDayOfYear)
 EVT_BUTTON(ID_Button_LWP_LVDC_Export, MyFrame::OnButton_LWP_LVDC_Export)
+EVT_BUTTON(ID_Button_LWP_SSV_Export, MyFrame::OnButton_LWP_SSV_Export)
 EVT_BUTTON(ID_Button_MCT_View, MyFrame::OnButton_View_MCT)
 EVT_BUTTON(ID_Button_MCT_Save, MyFrame::OnButton_Save_MCT)
 END_EVENT_TABLE()
@@ -481,6 +483,7 @@ void MyFrame::AddLWPPage()
     new wxButton(panel2, ID_Button_LWP_Shuttle_Presets, wxT("Shuttle Presets"), wxPoint(minX, Y), wxDefaultSize);
 
     button = new wxButton(panel2, ID_Button_LWP_LVDC_Export, wxT("Export LVDC"), wxPoint(minX, 300), wxDefaultSize);
+    new wxButton(panel2, ID_Button_LWP_SSV_Export, wxT("Export SSV"), wxPoint(minX, 300 + diffY), wxDefaultSize);
 }
 
 void MyFrame::AddOMPPage()
@@ -1759,6 +1762,23 @@ void MyFrame::OnButton_LWP_LVDC_Export(wxCommandEvent& event)
     }
 
     SetStatusText("LVDC data successfully exported!");
+}
+
+void MyFrame::OnButton_LWP_SSV_Export(wxCommandEvent& event)
+{
+    if (core == NULL)
+    {
+        SetStatusText("Launch day not initialized!");
+        return;
+    }
+
+    if (core->LWPExportForSSV())
+    {
+        SetStatusText("Error exporting SSV data!");
+        return;
+    }
+
+    SetStatusText("SSV data successfully exported!");
 }
 
 void MyFrame::OnButton_View_MCT(wxCommandEvent& event)

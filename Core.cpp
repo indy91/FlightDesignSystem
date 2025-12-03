@@ -400,6 +400,75 @@ int Core::LWPExportForLVDC()
 	return 0;
 }
 
+int Core::LWPExportForSSV()
+{
+	std::ofstream myfile;
+	std::string file;
+
+	if (!Initialized) return 1;
+	if (LWPSummaryTable.Error != 0)
+	{
+		return 1;
+	}
+
+	file = ProjectFolder + "Outputs/SSV.txt";
+
+	myfile.open(file);
+	if (myfile.is_open() == false) return 1;
+
+	//Get target state vector to T-9 minutes
+
+	double GMTSCEN, MJDSCEN;
+	char buf[1024];
+
+	GMTSCEN = LWPSummaryTable.GMTLO - 540.1;
+	MJDSCEN = sescnst.GMTBASE + GMTSCEN / 24.0 / 3600.0;
+
+	EnckeIntegratorInput in;
+	EnckeIntegratorOutput out;
+
+	in.R = PVTABT.R;
+	in.V = PVTABT.V;
+	in.GMT = PVTABT.GMT;
+	in.KFactor = PVTABT.KFactor;
+	in.DragIndicator = true;
+	in.Weight = PVTABT.Weight;
+	in.Area = PVTABT.Area;
+	in.dt = GMTSCEN - PVTABT.GMT;
+
+	EnckeIntegrator encke(globcnst);
+
+	encke.Propagate(in, out);
+
+	if (out.Error) return out.Error;
+
+	//Convert to J2000 (left-handed)
+	out.R = mul(sescnst.M_TEG_TO_J2000, out.R);
+	out.V = mul(sescnst.M_TEG_TO_J2000, out.V);
+
+	//Write to file
+	sprintf_s(buf, "%04d-%02d-%02d", sescnst.Year, sescnst.Month, sescnst.Day);
+	myfile << "SSV Shuttle targeting for " << buf << std::endl << std::endl;
+
+	myfile << "MJD of T-9min:" << std::endl;
+	sprintf_s(buf, "%.9lf", MJDSCEN);
+	myfile << buf << std::endl << std::endl;
+
+	myfile << "Target state vector for scenario:" << std::endl;
+
+	sprintf_s(buf, "RPOS %.3lf %.3lf %.3lf", out.R.x, out.R.z, out.R.y);
+	myfile << buf << std::endl;
+
+	sprintf_s(buf, "RVEL %.4lf %.4lf %.4lf", out.V.x, out.V.z, out.V.y);
+	myfile << buf << std::endl << std::endl;
+
+	sprintf_s(buf, "%.4lf", LWPSummaryTable.IIGM * OrbMech::DEG);
+	myfile << "Inclination (deg) " << buf << std::endl;
+
+	myfile.close();
+	return 0;
+}
+
 bool Core::RunOMP(std::string inputs[], std::string& errormessage, std::vector<std::vector<std::string>>& data)
 {
 	OMP::OMPInputs in;

@@ -33,6 +33,7 @@ public:
 	int RunLWP(std::string inputs[], std::vector<std::vector<std::string>> &data);
 	int SaveLWPStateVector(std::string filename);
 	int LWPExportForLVDC();
+	int LWPExportForSSV();
 
 	bool RunOMP(std::string inputs[], std::string &errormessage, std::vector<std::vector<std::string>>& data);
 

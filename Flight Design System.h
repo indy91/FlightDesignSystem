@@ -53,6 +53,7 @@ public:
     void StateVectorRawDataEnter(wxCommandEvent& event);
     void CalculateDayOfYear(wxCommandEvent& event);
     void OnButton_LWP_LVDC_Export(wxCommandEvent& event);
+    void OnButton_LWP_SSV_Export(wxCommandEvent& event);
     void OnButton_View_MCT(wxCommandEvent& event);
     void OnButton_Save_MCT(wxCommandEvent& event);
 private:
