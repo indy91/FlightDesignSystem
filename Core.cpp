@@ -497,7 +497,7 @@ bool Core::RunOMP(std::string inputs[], std::string& errormessage, std::vector<s
 		return true;
 	}
 
-	err = ReadMCTFile(ProjectFolder + inputs[4]);
+	err = ReadMCTFile(ProjectFolder + inputs[4], ManeuverConstraintsInput);
 
 	if (err)
 	{
@@ -637,9 +637,9 @@ int Core::CalculateDayOfYear(int Year, int Month, int Day, int& DOY) const
 	return 0;
 }
 
-int Core::ReadMCTFile(std::string file)
+int Core::ReadMCTFile(std::string file, std::vector<OMP::ManeuverConstraintsInput>& MCT) const
 {
-	ManeuverConstraintsInput.clear();
+	MCT.clear();
 
 	std::ifstream myfile;
 
@@ -656,7 +656,7 @@ int Core::ReadMCTFile(std::string file)
 
 	while (std::getline(myfile, line))
 	{
-		if (ReadMCTLine(line))
+		if (ReadMCTLine(line, MCT))
 		{
 			std::cout << "Error in constraints for maneuver " << i << std::endl;
 			return 1;
@@ -668,7 +668,7 @@ int Core::ReadMCTFile(std::string file)
 	return 0;
 }
 
-int Core::ReadMCTLine(std::string line)
+int Core::ReadMCTLine(std::string line, std::vector<OMP::ManeuverConstraintsInput>& MCT) const
 {
 	std::string data[13];
 
@@ -705,8 +705,13 @@ int Core::ReadMCTLine(std::string line)
 		temp.SecondaryValues[i - 4].assign(Buff2);
 	}
 
-	ManeuverConstraintsInput.push_back(temp);
+	MCT.push_back(temp);
 	return 0;
+}
+
+double Core::GetLWP_GMTLO() const
+{
+	return LWPSummaryTable.GMTLO;
 }
 
 int Core::SetConstants(int world, int Year, int Month, int Day)

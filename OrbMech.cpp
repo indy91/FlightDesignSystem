@@ -893,6 +893,18 @@ namespace OrbMech
 		return _M(i.x, i.y, i.z, j.x, j.y, j.z, k.x, k.y, k.z); //rotation matrix to LVLH
 	}
 
+	MATRIX3 LOS_Matrix(VECTOR3 R_A, VECTOR3 V_A, VECTOR3 R_P, VECTOR3 V_P)
+	{
+		VECTOR3 H, i, j, k;
+
+		H = -unit(crossp(R_A, V_A));
+		i = unit(R_P - R_A);
+		k = unit(crossp(i, H));
+		j = unit(crossp(k, i));
+
+		return _M(i.x, i.y, i.z, j.x, j.y, j.z, k.x, k.y, k.z); //rotation matrix to LOS
+	}
+
 	CELEMENTS CartesianToKeplerian(VECTOR3 R, VECTOR3 V, double mu)
 	{
 		CELEMENTS out;

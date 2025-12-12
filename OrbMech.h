@@ -199,6 +199,8 @@ namespace OrbMech
 	MATRIX3 tmat(MATRIX3 a);
 	//Rotation matrix from inertial to LVLH
 	MATRIX3 LVLH_Matrix(VECTOR3 R, VECTOR3 V);
+	//Rotation matrix from inertial to LOS
+	MATRIX3 LOS_Matrix(VECTOR3 R_A, VECTOR3 V_A, VECTOR3 R_P, VECTOR3 V_P);
 
 	CELEMENTS CartesianToKeplerian(VECTOR3 R, VECTOR3 V, double mu);
 	OELEMENTS coe_from_sv(VECTOR3 R, VECTOR3 V, double mu);

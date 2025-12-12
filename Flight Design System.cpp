@@ -30,10 +30,10 @@ program. If not, see <https://www.gnu.org/licenses/>.
 enum
 {
     ID_Hello = 1,
-    ID_Button_1,
-    ID_Button_2,
-    ID_Button_3,
-    ID_Button_4,
+    ID_Button_LWPGenerate,
+    ID_Button_LWPSaveStateVector,
+    ID_Button_OMPGenerate,
+    ID_Button_SkylabLWPGenerate,
     ID_TextBox_1,
     ID_TextBox_Year,
     ID_TextBox_Month,
@@ -44,46 +44,48 @@ enum
     ID_Button_Load,
     MainContentID,
     wxID_StateVectorList,
+    ID_Button_SV_Check,
     ID_Button_SV_Save,
     ID_Button_SV_New,
-    wxID_StateVectorRawData,
     ID_Button_LWP_LVDC_Export,
     ID_Button_LWP_SSV_Export,
     ID_Button_MCT_View,
-    ID_Button_MCT_Save
+    ID_Button_MCT_Save,
+    ID_Button_FDOMFD_Export
 };
 
-BEGIN_EVENT_TABLE(MyFrame, wxFrame)
-EVT_BUTTON(ID_Button_1, MyFrame::OnButton1)
-EVT_BUTTON(ID_Button_2, MyFrame::OnButton2)
-EVT_BUTTON(ID_Button_3, MyFrame::OnButton3)
-EVT_BUTTON(ID_Button_4, MyFrame::OnButton4)
-EVT_BUTTON(ID_Button_LWP_SIB_Presets, MyFrame::OnButtonLWP_SIB_Presets)
-EVT_BUTTON(ID_Button_LWP_Shuttle_Presets, MyFrame::OnButtonLWP_Shuttle_Presets)
-EVT_BUTTON(ID_Button_Save, MyFrame::OnButton_Save)
-EVT_BUTTON(ID_Button_Load, MyFrame::OnButton_Load)
-EVT_NOTEBOOK_PAGE_CHANGED(MainContentID, MyFrame::OnPageChanged)
-EVT_LIST_ITEM_SELECTED(wxID_StateVectorList, MyFrame::StateVectorSelected)
-EVT_BUTTON(ID_Button_SV_Save, MyFrame::OnButton_StateVector_Save)
-EVT_BUTTON(ID_Button_SV_New, MyFrame::OnButton_StateVector_New)
-EVT_TEXT_ENTER(wxID_StateVectorRawData, MyFrame::StateVectorRawDataEnter)
-EVT_TEXT(ID_TextBox_Year, MyFrame::CalculateDayOfYear)
-EVT_TEXT(ID_TextBox_Month, MyFrame::CalculateDayOfYear)
-EVT_TEXT(ID_TextBox_Day, MyFrame::CalculateDayOfYear)
-EVT_BUTTON(ID_Button_LWP_LVDC_Export, MyFrame::OnButton_LWP_LVDC_Export)
-EVT_BUTTON(ID_Button_LWP_SSV_Export, MyFrame::OnButton_LWP_SSV_Export)
-EVT_BUTTON(ID_Button_MCT_View, MyFrame::OnButton_View_MCT)
-EVT_BUTTON(ID_Button_MCT_Save, MyFrame::OnButton_Save_MCT)
+BEGIN_EVENT_TABLE(FDSFrame, wxFrame)
+EVT_BUTTON(ID_Button_LWPGenerate, FDSFrame::OnButtonLWPGenerate)
+EVT_BUTTON(ID_Button_LWPSaveStateVector, FDSFrame::OnButtonLWPSaveStateVector)
+EVT_BUTTON(ID_Button_OMPGenerate, FDSFrame::OnButtonOMPGenerate)
+EVT_BUTTON(ID_Button_SkylabLWPGenerate, FDSFrame::OnButtonSkylabLWPGenerate)
+EVT_BUTTON(ID_Button_LWP_SIB_Presets, FDSFrame::OnButtonLWP_SIB_Presets)
+EVT_BUTTON(ID_Button_LWP_Shuttle_Presets, FDSFrame::OnButtonLWP_Shuttle_Presets)
+EVT_BUTTON(ID_Button_Save, FDSFrame::OnButton_Save)
+EVT_BUTTON(ID_Button_Load, FDSFrame::OnButton_Load)
+EVT_NOTEBOOK_PAGE_CHANGED(MainContentID, FDSFrame::OnPageChanged)
+EVT_LIST_ITEM_SELECTED(wxID_StateVectorList, FDSFrame::StateVectorSelected)
+EVT_BUTTON(ID_Button_SV_Check, FDSFrame::OnButton_StateVector_Check)
+EVT_BUTTON(ID_Button_SV_Save, FDSFrame::OnButton_StateVector_Save)
+EVT_BUTTON(ID_Button_SV_New, FDSFrame::OnButton_StateVector_New)
+EVT_TEXT(ID_TextBox_Year, FDSFrame::CalculateDayOfYear)
+EVT_TEXT(ID_TextBox_Month, FDSFrame::CalculateDayOfYear)
+EVT_TEXT(ID_TextBox_Day, FDSFrame::CalculateDayOfYear)
+EVT_BUTTON(ID_Button_LWP_LVDC_Export, FDSFrame::OnButton_LWP_LVDC_Export)
+EVT_BUTTON(ID_Button_LWP_SSV_Export, FDSFrame::OnButton_LWP_SSV_Export)
+EVT_BUTTON(ID_Button_MCT_View, FDSFrame::OnButton_View_MCT)
+EVT_BUTTON(ID_Button_MCT_Save, FDSFrame::OnButton_Save_MCT)
+EVT_BUTTON(ID_Button_FDOMFD_Export, FDSFrame::OnButton_FDOMFD_Export)
 END_EVENT_TABLE()
 
 bool MyApp::OnInit()
 {
-    MyFrame* frame = new MyFrame("Flight Design System");
+    FDSFrame* frame = new FDSFrame("Flight Design System");
     frame->Show(true);
     return true;
 }
 
-MyFrame::MyFrame(const wxString& title)
+FDSFrame::FDSFrame(const wxString& title)
     : wxFrame(NULL, wxID_ANY, title)
 {
     core = NULL;
@@ -120,7 +122,7 @@ MyFrame::MyFrame(const wxString& title)
 
     // Create a status bar just for fun
     CreateStatusBar(1);
-    SetStatusText(wxT("Welcome to wxWidgets!"));
+    SetStatusText(wxT("Welcome to the Flight Design System!"));
 
     AddConfigPage();
     AddLWPPage();
@@ -129,7 +131,7 @@ MyFrame::MyFrame(const wxString& title)
     AddStateVectorPage();
 }
 
-MyFrame::~MyFrame()
+FDSFrame::~FDSFrame()
 {
     if (core)
     {
@@ -138,7 +140,7 @@ MyFrame::~MyFrame()
     }
 }
 
-void MyFrame::AddConfigPage()
+void FDSFrame::AddConfigPage()
 {
     wxArrayString strings;
     int minX, minY, diffX, diffY, counter, difftext, Y, diffunit;
@@ -196,7 +198,7 @@ void MyFrame::AddConfigPage()
     Y += diffY;
 }
 
-void MyFrame::AddLWPPage()
+void FDSFrame::AddLWPPage()
 {
     wxArrayString strings;
     int minX, minY, diffX, diffY, counter, difftext, Y, diffunit;
@@ -469,10 +471,10 @@ void MyFrame::AddLWPPage()
     textLWP_WRAP->SetToolTip(wxT("Flag to wrap initial phase angle"));
     Y += diffY;
 
-    wxButton* button = new wxButton(panel2, ID_Button_1, wxT("Generate"),
+    wxButton* button = new wxButton(panel2, ID_Button_LWPGenerate, wxT("Generate"),
         wxPoint(10, 514), wxDefaultSize);
 
-    button = new wxButton(panel2, ID_Button_2, wxT("Save SV"),
+    button = new wxButton(panel2, ID_Button_LWPSaveStateVector, wxT("Save SV"),
         wxPoint(550, 514), wxDefaultSize);
 
     minX += 256 + 64;
@@ -482,11 +484,17 @@ void MyFrame::AddLWPPage()
     Y += diffY;
     new wxButton(panel2, ID_Button_LWP_Shuttle_Presets, wxT("Shuttle Presets"), wxPoint(minX, Y), wxDefaultSize);
 
-    button = new wxButton(panel2, ID_Button_LWP_LVDC_Export, wxT("Export LVDC"), wxPoint(minX, 300), wxDefaultSize);
-    new wxButton(panel2, ID_Button_LWP_SSV_Export, wxT("Export SSV"), wxPoint(minX, 300 + diffY), wxDefaultSize);
+    Y = 300;
+    new wxStaticText(panel2, wxID_ANY, "Actual GMTLO", wxPoint(minX, Y + difftext));
+    Y += diffY;
+    textLWP_Actual_GMTLO = new wxTextCtrl(panel2, wxID_ANY, "", wxPoint(minX, Y),wxDefaultSize, wxTE_READONLY);
+    Y += diffY;
+    new wxButton(panel2, ID_Button_LWP_LVDC_Export, wxT("Export LVDC"), wxPoint(minX, Y), wxDefaultSize);
+    Y += diffY;
+    new wxButton(panel2, ID_Button_LWP_SSV_Export, wxT("Export SSV"), wxPoint(minX, Y), wxDefaultSize);
 }
 
-void MyFrame::AddOMPPage()
+void FDSFrame::AddOMPPage()
 {
     int minX, minY, diffX, diffY, counter, difftext, Y, diffunit;
 
@@ -525,7 +533,7 @@ void MyFrame::AddOMPPage()
 
     Y += diffY;
 
-    new wxButton(panel3, ID_Button_3, wxT("Generate"),
+    new wxButton(panel3, ID_Button_OMPGenerate, wxT("Generate"),
         wxPoint(10, 514), wxDefaultSize);
 
 
@@ -562,9 +570,12 @@ void MyFrame::AddOMPPage()
 
     new wxButton(panel3, ID_Button_MCT_Save, wxT("Save"),
         wxPoint(450, 414), wxDefaultSize);
+
+    new wxButton(panel3, ID_Button_FDOMFD_Export, wxT("Export for FDO MFD"),
+        wxPoint(550, 414), wxDefaultSize);
 }
 
-void MyFrame::AddSkylabLWPPage()
+void FDSFrame::AddSkylabLWPPage()
 {
     wxArrayString strings;
     int minX, minY, diffX, diffY, counter, difftext, Y, diffunit;
@@ -744,33 +755,69 @@ void MyFrame::AddSkylabLWPPage()
     new wxStaticText(panel4, wxID_ANY, "ft/s", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
-    wxButton* button = new wxButton(panel4, ID_Button_4, wxT("Generate"),
+    wxButton* button = new wxButton(panel4, ID_Button_SkylabLWPGenerate, wxT("Generate"),
         wxPoint(10, 514), wxDefaultSize);
 }
 
-void MyFrame::AddStateVectorPage()
+void FDSFrame::AddStateVectorPage()
 {
+    wxArrayString strings;
+    int minX, diffX, difftext, Y, diffY, diffunit;
+
     StateVectorList = new wxListCtrl(panel5, wxID_StateVectorList, wxPoint(0, 0), wxSize(300, 300), wxLC_LIST);
 
     new wxButton(panel5, ID_Button_SV_New, wxT("New"),
         wxPoint(10, 356), wxDefaultSize);
 
-    new wxStaticText(panel5, wxID_ANY, "File Name:", wxPoint(400, 10));
-    textStateVectorFileName = new wxTextCtrl(panel5, wxID_ANY, "", wxPoint(400, 30), wxDefaultSize, wxTE_READONLY);
+    minX = 400;
+    diffX = 70;
+    difftext = 4;
+    Y = 10;
+    diffY = 32;
+    diffunit = 200;
 
-    new wxStaticText(panel5, wxID_ANY, "Raw Data:", wxPoint(400, 60));
+    new wxStaticText(panel5, wxID_ANY, "File Name:", wxPoint(minX, Y));
+    textStateVectorFileName = new wxTextCtrl(panel5, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    Y += diffY;
+    new wxStaticText(panel5, wxID_ANY, "Coordinates", wxPoint(minX, Y + difftext));
+    strings.Clear();
+    strings.Add("TEG");
+    strings.Add("J2000");
+    strings.Add("TLE");
+    comboStateVectorCoordinateSystem = new wxComboBox(panel5, wxID_ANY, wxEmptyString, wxPoint(minX + diffX, Y), wxDefaultSize, strings);
+    Y += diffY;
 
-    textStateVectorRawData = new wxTextCtrl(panel5, wxID_StateVectorRawData, "",
-        wxPoint(400, 80), wxSize(450, 160),
-        wxTE_MULTILINE | wxSUNKEN_BORDER | wxTE_PROCESS_ENTER);
+    new wxStaticText(panel5, wxID_ANY, "SV", wxPoint(minX, Y + difftext));
+    textStateVectorData = new wxTextCtrl(panel5, wxID_ANY, wxEmptyString, wxPoint(minX + diffX, Y), wxSize(450, 80), wxTE_MULTILINE);
+    textStateVectorData->SetToolTip(wxT("State vector in coordinate system specific format"));
+    Y += diffY * 3;
 
+    new wxStaticText(panel5, wxID_ANY, "Weight", wxPoint(minX, Y + difftext));
+    textStateVectorWeight = new wxTextCtrl(panel5, wxID_ANY, wxEmptyString, wxPoint(minX + diffX, Y));
+    textStateVectorWeight->SetToolTip(wxT("Weight in pounds"));
+    new wxStaticText(panel5, wxID_ANY, "lbs", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel5, wxID_ANY, "Area", wxPoint(minX, Y + difftext));
+    textStateVectorArea = new wxTextCtrl(panel5, wxID_ANY, wxEmptyString, wxPoint(minX + diffX, Y));
+    textStateVectorArea->SetToolTip(wxT("Vehicle area in square feet"));
+    new wxStaticText(panel5, wxID_ANY, "sq ft", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel5, wxID_ANY, "K-Factor", wxPoint(minX, Y + difftext));
+    textStateVectorKFactor = new wxTextCtrl(panel5, wxID_ANY, wxEmptyString, wxPoint(minX + diffX, Y));
+    textStateVectorKFactor->SetToolTip(wxT("Drag multiplier"));
+    new wxStaticText(panel5, wxID_ANY, "n.d.", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxButton(panel5, ID_Button_SV_Check, wxT("Check"),
+        wxPoint(minX, Y), wxDefaultSize);
     new wxButton(panel5, ID_Button_SV_Save, wxT("Save"),
-        wxPoint(400, 256), wxDefaultSize);
-
-    new wxStaticText(panel5, wxID_ANY, "Orbit Data:", wxPoint(400, 300));
-
+        wxPoint(minX + 100, Y), wxDefaultSize);
+    Y += diffY * 2;
+    new wxStaticText(panel5, wxID_ANY, "Orbit Data:", wxPoint(minX, Y));
+    Y += diffY;
     textStateVectorOrbitData = new wxTextCtrl(panel5, wxID_ANY, "",
-        wxPoint(400, 320), wxSize(450, 160),
+        wxPoint(minX, Y), wxSize(450, 160),
         wxTE_READONLY | wxTE_MULTILINE);
 }
 
@@ -780,7 +827,7 @@ std::string StringFromTextBox(wxTextCtrl* box)
     return std::string(text1.mb_str());
 }
 
-void MyFrame::OnButton1(wxCommandEvent& event)
+void FDSFrame::OnButtonLWPGenerate(wxCommandEvent& event)
 {
     if (SetConstants())
     {
@@ -980,9 +1027,17 @@ void MyFrame::OnButton1(wxCommandEvent& event)
         dialog = new FDSOutputDialog("Output", data[i]);
         dialog->Show();
     }
+
+    // Save actual liftoff time
+    double GMTLO = core->GetLWP_GMTLO();
+
+    char Buffer[128];
+    OrbMech::GMT2String4(Buffer, GMTLO);
+    textLWP_Actual_GMTLO->Clear();
+    textLWP_Actual_GMTLO->AppendText(Buffer);
 }
 
-void MyFrame::OnButton2(wxCommandEvent& event)
+void FDSFrame::OnButtonLWPSaveStateVector(wxCommandEvent& event)
 {
     if (core == NULL) return;
 
@@ -995,7 +1050,7 @@ void MyFrame::OnButton2(wxCommandEvent& event)
     }  
 }
 
-void MyFrame::OnButton3(wxCommandEvent& event)
+void FDSFrame::OnButtonOMPGenerate(wxCommandEvent& event)
 {
     //Calculate OMP
 
@@ -1043,7 +1098,7 @@ void MyFrame::OnButton3(wxCommandEvent& event)
     }
 }
 
-void MyFrame::OnButton4(wxCommandEvent& event)
+void FDSFrame::OnButtonSkylabLWPGenerate(wxCommandEvent& event)
 {
     if (SetConstants())
     {
@@ -1148,7 +1203,7 @@ void MyFrame::OnButton4(wxCommandEvent& event)
     }
 }
 
-void MyFrame::OnButtonLWP_SIB_Presets(wxCommandEvent& event)
+void FDSFrame::OnButtonLWP_SIB_Presets(wxCommandEvent& event)
 {
     textLWPCArea->ChangeValue("129.4");
     textLWPCWHT->ChangeValue("31000.0");
@@ -1162,7 +1217,7 @@ void MyFrame::OnButtonLWP_SIB_Presets(wxCommandEvent& event)
     textLWP_GAMINS->ChangeValue("0.0");
 }
 
-void MyFrame::OnButtonLWP_Shuttle_Presets(wxCommandEvent& event)
+void FDSFrame::OnButtonLWP_Shuttle_Presets(wxCommandEvent& event)
 {
     textLWPCArea->ChangeValue("1301.0");
     textLWPCWHT->ChangeValue("255807.0");
@@ -1198,7 +1253,7 @@ void LoadComboBox(wxFileConfig* config, wxComboBox* ctrl, wxString str)
     if (config->Read(str, &inttemp)) ctrl->SetSelection(inttemp);
 }
 
-void MyFrame::OnButton_Save(wxCommandEvent& event)
+void FDSFrame::OnButton_Save(wxCommandEvent& event)
 {
     wxString project = textProjectFile->GetLineText(0);
     wxString folder = "Projects/" + project;
@@ -1323,7 +1378,7 @@ void MyFrame::OnButton_Save(wxCommandEvent& event)
     SetStatusText("Save successful!");
 }
 
-void MyFrame::OnButton_Load(wxCommandEvent& event)
+void FDSFrame::OnButton_Load(wxCommandEvent& event)
 {
     wxString project = textProjectFile->GetLineText(0);
     wxString file = "Projects/" + project + "/" + project + ".ini";
@@ -1394,10 +1449,17 @@ void MyFrame::OnButton_Load(wxCommandEvent& event)
 
     delete config;
 
-    SetStatusText("Project loaded successfully!");
+    if (SetConstants())
+    {
+        SetStatusText("Project loaded, but initialization failed!");
+    }
+    else
+    {
+        SetStatusText("Project loaded successfully!");
+    }
 }
 
-void MyFrame::OnPageChanged(wxBookCtrlEvent& event)
+void FDSFrame::OnPageChanged(wxBookCtrlEvent& event)
 {
    int val = event.GetSelection();
 
@@ -1407,7 +1469,7 @@ void MyFrame::OnPageChanged(wxBookCtrlEvent& event)
    }
 }
 
-void MyFrame::ReloadStateVectorPage()
+void FDSFrame::ReloadStateVectorPage()
 {
     //State Vector page. Load list of state vectors
     StateVectorList->DeleteAllItems();
@@ -1446,7 +1508,7 @@ void MyFrame::ReloadStateVectorPage()
     }
 }
 
-void MyFrame::StateVectorSelected(wxListEvent& event)
+void FDSFrame::StateVectorSelected(wxListEvent& event)
 {
     wxListItem item = event.GetItem();
 
@@ -1463,26 +1525,22 @@ void MyFrame::StateVectorSelected(wxListEvent& event)
     if (!file.Open())
         return;
 
+    // Set file name into text box for it
     textStateVectorFileName->ChangeValue(str);
-    textStateVectorRawData->Clear();
-
-    wxString arr;
-
-    size_t i;
-    for (i = 0; i < file.GetLineCount(); i++)
-    {
-        arr.append(file[i]);
-        arr.append("\n");
-    }
-
-    textStateVectorRawData->ChangeValue(arr);
-
+    // Parse state vector file data
+    ParseStateVectorFile(&file);
+    // Update orbit data
     UpdateOrbitData();
 
     file.Close();
 }
 
-void MyFrame::OnButton_StateVector_Save(wxCommandEvent& event)
+void FDSFrame::OnButton_StateVector_Check(wxCommandEvent& event)
+{
+    UpdateOrbitData();
+}
+
+void FDSFrame::OnButton_StateVector_Save(wxCommandEvent& event)
 {
     wxString project = textProjectFile->GetLineText(0);
     wxString filename = textStateVectorFileName->GetLineText(0);
@@ -1497,16 +1555,20 @@ void MyFrame::OnButton_StateVector_Save(wxCommandEvent& event)
 
     file.Clear();
 
-    for (int i = 0; i < textStateVectorRawData->GetNumberOfLines(); i++)
+    file.AddLine(comboStateVectorCoordinateSystem->GetValue());
+    for (int i = 0; i < textStateVectorData->GetNumberOfLines(); i++)
     {
-        file.AddLine(textStateVectorRawData->GetLineText(i));
+        file.AddLine(textStateVectorData->GetLineText(i));
     }
+    file.AddLine(textStateVectorWeight->GetLineText(0));
+    file.AddLine(textStateVectorArea->GetLineText(0));
+    file.AddLine(textStateVectorKFactor->GetLineText(0));
 
     file.Write();
     file.Close();
 }
 
-void MyFrame::OnButton_StateVector_New(wxCommandEvent& event)
+void FDSFrame::OnButton_StateVector_New(wxCommandEvent& event)
 {
     wxTextEntryDialog dialog(this,
         wxT("Enter name of the state vector file:"),
@@ -1546,19 +1608,8 @@ void MyFrame::OnButton_StateVector_New(wxCommandEvent& event)
         //Write to file name text box
         textStateVectorFileName->ChangeValue(filename);
 
-        //Write to log text box
-        textStateVectorRawData->Clear();
-
-        wxString arr;
-
-        size_t i;
-        for (i = 0; i < file.GetLineCount(); i++)
-        {
-            arr.append(file[i]);
-            arr.append("\n");
-        }
-
-        textStateVectorRawData->ChangeValue(arr);
+        //Write to log text boxes
+        ParseStateVectorFile(&file);
 
         file.Close();
 
@@ -1569,17 +1620,77 @@ void MyFrame::OnButton_StateVector_New(wxCommandEvent& event)
     }
 }
 
-void MyFrame::UpdateOrbitData()
+int FDSFrame::ParseStateVectorFile(wxTextFile* file)
+{
+    // State vector formats have 6 or 7 lines
+    if (file->GetLineCount() < 6) return 1;
+
+    wxString line, sv[6];
+    int coord = 0;
+
+    // Line 1: Coordinate system
+    line = file->GetFirstLine();
+    if (line == "TEG")
+    {
+        coord = 1;
+    }
+    else if (line == "J2000")
+    {
+        coord = 2;
+    }
+    else if (line == "TLE")
+    {
+        coord = 3;
+    }
+    else return 2;
+
+    if (coord < 3)
+    {
+        // Line 2-4: State Vector
+        sv[0] = file->GetNextLine();
+        sv[1] = file->GetNextLine();
+        sv[2] = file->GetNextLine();
+        if (file->GetLineCount() < 7) return 1;
+    }
+    else
+    {
+        // Line 2-3: State Vector
+        sv[0] = file->GetNextLine();
+        sv[1] = file->GetNextLine();
+    }
+    // Weight
+    sv[3] = file->GetNextLine();
+    // Area
+    sv[4] = file->GetNextLine();
+    // K-Factor
+    sv[5] = file->GetNextLine();
+
+    // Output
+    comboStateVectorCoordinateSystem->SetSelection(coord - 1);
+    textStateVectorData->Clear();
+    textStateVectorData->AppendText(sv[0]);
+    textStateVectorData->AppendText("\n" + sv[1]);
+    if (coord < 3) textStateVectorData->AppendText("\n" + sv[2]);
+    textStateVectorWeight->Clear();
+    textStateVectorWeight->AppendText(sv[3]);
+    textStateVectorArea->Clear();
+    textStateVectorArea->AppendText(sv[4]);
+    textStateVectorKFactor->Clear();
+    textStateVectorKFactor->AppendText(sv[5]);
+    return 0;
+}
+
+void FDSFrame::UpdateOrbitData()
 {
     wxString str;
     int coord, lines, required_lines;
 
     textStateVectorOrbitData->Clear();
 
-    lines = textStateVectorRawData->GetNumberOfLines();
+    lines = 4 + textStateVectorData->GetNumberOfLines();
 
     //Coordinate system
-    str = textStateVectorRawData->GetLineText(0);
+    str = comboStateVectorCoordinateSystem->GetStringSelection();
 
     coord = 0;
     required_lines = 0;
@@ -1616,18 +1727,16 @@ void MyFrame::UpdateOrbitData()
 
     textStateVectorOrbitData->AppendText("Coordinate system: " + str + "\n");
 
-    int i;
-
     if (coord <= 2)
     {
         //TEG and J2000
-        str = textStateVectorRawData->GetLineText(1);
+        str = textStateVectorData->GetLineText(0);
         textStateVectorOrbitData->AppendText("Position vector: " + str + "\n");
 
-        str = textStateVectorRawData->GetLineText(2);
+        str = textStateVectorData->GetLineText(1);
         textStateVectorOrbitData->AppendText("Velocity vector: " + str + "\n");
 
-        str = textStateVectorRawData->GetLineText(3);
+        str = textStateVectorData->GetLineText(2);
         if (coord == 1)
         {
             //TEG
@@ -1638,30 +1747,27 @@ void MyFrame::UpdateOrbitData()
             //MJD
             textStateVectorOrbitData->AppendText("MJD: " + str + "\n");
         }
-        i = 4;
     }
     else
     {
         //TLE
-        str = textStateVectorRawData->GetLineText(1);
+        str = textStateVectorData->GetLineText(0);
         textStateVectorOrbitData->AppendText("Line 1: " + str + "\n");
 
-        str = textStateVectorRawData->GetLineText(2);
+        str = textStateVectorData->GetLineText(1);
         textStateVectorOrbitData->AppendText("Line 2: " + str + "\n");
-
-        i = 3;
     }
 
     //Weight
-    str = textStateVectorRawData->GetLineText(i);
+    str = textStateVectorWeight->GetLineText(0);
     textStateVectorOrbitData->AppendText("Weight: " + str + " lbs\n");
 
     //Area
-    str = textStateVectorRawData->GetLineText(i + 1);
+    str = textStateVectorArea->GetLineText(0);
     textStateVectorOrbitData->AppendText("Area: " + str + " square feet\n");
 
     //K-Factor
-    str = textStateVectorRawData->GetLineText(i + 2);
+    str = textStateVectorKFactor->GetLineText(0);
     textStateVectorOrbitData->AppendText("Drag multiplier: " + str + "\n");
 
     //Age of state vector
@@ -1683,12 +1789,7 @@ void MyFrame::UpdateOrbitData()
     textStateVectorOrbitData->AppendText("Time from midnight to state vector is " +  str + " hours\n");
 }
 
-void MyFrame::StateVectorRawDataEnter(wxCommandEvent& event)
-{
-    UpdateOrbitData();
-}
-
-int MyFrame::SetConstants()
+int FDSFrame::SetConstants()
 {
     if (core == NULL)
     {
@@ -1710,7 +1811,7 @@ int MyFrame::SetConstants()
     return core->SetConstants(comboWorld->GetSelection(), Year, Month, Day);
 }
 
-void MyFrame::CalculateDayOfYear(wxCommandEvent& event)
+void FDSFrame::CalculateDayOfYear(wxCommandEvent& event)
 {
     if (core == NULL)
     {
@@ -1747,7 +1848,7 @@ void MyFrame::CalculateDayOfYear(wxCommandEvent& event)
     textDayOfYear->ChangeValue(mystring);
 }
 
-void MyFrame::OnButton_LWP_LVDC_Export(wxCommandEvent& event)
+void FDSFrame::OnButton_LWP_LVDC_Export(wxCommandEvent& event)
 {
     if (core == NULL)
     {
@@ -1764,7 +1865,7 @@ void MyFrame::OnButton_LWP_LVDC_Export(wxCommandEvent& event)
     SetStatusText("LVDC data successfully exported!");
 }
 
-void MyFrame::OnButton_LWP_SSV_Export(wxCommandEvent& event)
+void FDSFrame::OnButton_LWP_SSV_Export(wxCommandEvent& event)
 {
     if (core == NULL)
     {
@@ -1781,7 +1882,7 @@ void MyFrame::OnButton_LWP_SSV_Export(wxCommandEvent& event)
     SetStatusText("SSV data successfully exported!");
 }
 
-void MyFrame::OnButton_View_MCT(wxCommandEvent& event)
+void FDSFrame::OnButton_View_MCT(wxCommandEvent& event)
 {
     wxString str = textOMP_MCT->GetLineText(0);
     wxString project = textProjectFile->GetLineText(0);
@@ -1825,7 +1926,7 @@ void MyFrame::OnButton_View_MCT(wxCommandEvent& event)
     file.Close();
 }
 
-void MyFrame::OnButton_Save_MCT(wxCommandEvent& event)
+void FDSFrame::OnButton_Save_MCT(wxCommandEvent& event)
 {
     std::string line;
     std::vector<std::string> array;
@@ -1880,6 +1981,103 @@ void MyFrame::OnButton_Save_MCT(wxCommandEvent& event)
     file.Clear();
 
     for (i = 0; i < array.size(); i++)
+    {
+        file.AddLine(array[i]);
+    }
+
+    file.Write();
+    file.Close();
+}
+
+void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)
+{
+    if (core == NULL)
+    {
+        SetStatusText("Launch day not initialized!");
+        return;
+    }
+
+    wxString str = textOMP_MCT->GetLineText(0);
+    wxString project = textProjectFile->GetLineText(0);
+    wxString path = "Projects/" + project + "/";
+    wxString filepath = path + str;
+
+    if (!wxFile::Exists(filepath))
+    {
+        SetStatusText("MCT file does not exist!");
+        return;
+    }
+
+    std::vector<OMP::ManeuverConstraintsInput> ManeuverConstraintsInput;
+    std::vector <OMP::ManeuverConstraints> tab_out;
+    std::string errormessage;
+
+    if (core->ReadMCTFile(filepath.ToStdString(), ManeuverConstraintsInput))
+    {
+        SetStatusText("Could not read MCT file!");
+        return;
+    }
+
+    if (OMP::OrbitalManeuverProcessor::ParseManeuverConstraintsTable(ManeuverConstraintsInput, tab_out, errormessage))
+    {
+        wxString Output;
+        Output << errormessage;
+
+        SetStatusText(Output);
+        return;
+    }
+
+    std::string line;
+    std::vector<std::string> array;
+
+    array.push_back("LAUNCHDATE0 " + std::to_string(core->GetSessionConstants()->Year));
+    array.push_back("LAUNCHDATE1 " + std::to_string(core->GetSessionConstants()->DayOfYear));
+    array.push_back("LAUNCHDATE2 " + std::to_string(core->GetSessionConstants()->Hours));
+    array.push_back("LAUNCHDATE3 " + std::to_string(core->GetSessionConstants()->Minutes));
+    array.push_back("LAUNCHDATE4 " + std::to_string(core->GetSessionConstants()->launchdateSec));
+    array.push_back("NONSPHERICAL 1");
+    array.push_back("START_MCT");
+    for (unsigned i = 0; i < tab_out.size(); i++)
+    {
+        line = tab_out[i].name + " " + std::to_string(tab_out[i].type) + " " + std::to_string(tab_out[i].threshold) + " " + std::to_string(tab_out[i].thresh_num);
+
+        for (unsigned j = 0; j < 4; j++)
+        {
+            if (j < tab_out[i].secondaries.size())
+            {
+                line += " " + OMP::GetSecondaryName(tab_out[i].secondaries[j].type) + " " + std::to_string(tab_out[i].secondaries[j].value);
+            }
+            else
+            {
+                line += " NSEC 0.000000";
+            }
+        }
+
+        array.push_back(line);
+    }
+    array.push_back("END_MCT");
+
+    // Save to file
+    // Filename
+    str = project + ".txt";
+    filepath = path + "Outputs/" + str;
+
+    wxTextFile file(filepath);
+
+    if (!file.Exists())
+    {
+        file.Create();
+    }
+
+    if (!file.Open())
+    {
+        SetStatusText("Could not open file for export!");
+        return;
+    }
+
+    file.Clear();
+
+    for (unsigned i = 0; i < array.size(); i++)
     {
         file.AddLine(array[i]);
     }

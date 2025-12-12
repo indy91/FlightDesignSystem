@@ -23,6 +23,7 @@ program. If not, see <https://www.gnu.org/licenses/>.
 #include <wx/grid.h>
 
 class Core;
+class wxTextFile;
 
 class MyApp : public wxApp
 {
@@ -32,30 +33,31 @@ public:
 
 wxIMPLEMENT_APP(MyApp);
 
-class MyFrame : public wxFrame
+class FDSFrame : public wxFrame
 {
 public:
-    MyFrame(const wxString& title);
-    ~MyFrame();
+    FDSFrame(const wxString& title);
+    ~FDSFrame();
 
-    void OnButton1(wxCommandEvent& event);
-    void OnButton2(wxCommandEvent& event);
-    void OnButton3(wxCommandEvent& event);
-    void OnButton4(wxCommandEvent& event);
+    void OnButtonLWPGenerate(wxCommandEvent& event);
+    void OnButtonLWPSaveStateVector(wxCommandEvent& event);
+    void OnButtonOMPGenerate(wxCommandEvent& event);
+    void OnButtonSkylabLWPGenerate(wxCommandEvent& event);
     void OnButtonLWP_SIB_Presets(wxCommandEvent& event);
     void OnButtonLWP_Shuttle_Presets(wxCommandEvent& event);
     void OnButton_Save(wxCommandEvent& event);
     void OnButton_Load(wxCommandEvent& event);
     void OnPageChanged(wxBookCtrlEvent& event);
     void StateVectorSelected(wxListEvent& event);
+    void OnButton_StateVector_Check(wxCommandEvent& event);
     void OnButton_StateVector_Save(wxCommandEvent& event);
     void OnButton_StateVector_New(wxCommandEvent& event);
-    void StateVectorRawDataEnter(wxCommandEvent& event);
     void CalculateDayOfYear(wxCommandEvent& event);
     void OnButton_LWP_LVDC_Export(wxCommandEvent& event);
     void OnButton_LWP_SSV_Export(wxCommandEvent& event);
     void OnButton_View_MCT(wxCommandEvent& event);
     void OnButton_Save_MCT(wxCommandEvent& event);
+    void OnButton_FDOMFD_Export(wxCommandEvent& event);
 private:
 
     void AddConfigPage();
@@ -65,6 +67,7 @@ private:
     void AddStateVectorPage();
 
     void ReloadStateVectorPage();
+    int ParseStateVectorFile(wxTextFile* file);
     void UpdateOrbitData();
     int SetConstants();
 
@@ -121,6 +124,7 @@ private:
     wxTextCtrl* textLWP_DELNO;
     wxComboBox* comboLWP_NEGTIV;
     wxTextCtrl* textLWP_WRAP;
+    wxTextCtrl* textLWP_Actual_GMTLO;
 
     //OMP page
     wxTextCtrl* textOMP_GMTLO;
@@ -161,7 +165,11 @@ private:
    //State Vector page
     wxListCtrl* StateVectorList;
     wxTextCtrl* textStateVectorFileName;
-    wxTextCtrl* textStateVectorRawData;
+    wxComboBox* comboStateVectorCoordinateSystem;
+    wxTextCtrl* textStateVectorData;
+    wxTextCtrl* textStateVectorWeight;
+    wxTextCtrl* textStateVectorArea;
+    wxTextCtrl* textStateVectorKFactor;
     wxTextCtrl* textStateVectorOrbitData;
 
     Core* core;

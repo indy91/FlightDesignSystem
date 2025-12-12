@@ -23,7 +23,10 @@ program. If not, see <https://www.gnu.org/licenses/>.
 
 namespace OMP
 {
-	const unsigned MAXSECONDARIES = 9;
+	// CONSTANTS
+	const unsigned MAXMANEUVERS = 40U;
+	const unsigned MAXMANEUVERNAMELENGTH = 10U;
+	const unsigned MAXSECONDARIES = 9U;
 
 	class OMPDefs
 	{
@@ -37,6 +40,20 @@ namespace OMP
 		typedef enum { NOTHRU, PX4, PX3, PX2, MXL, YL, MYL, ZH, ZL, MZH, MZL, M1, M2, OL, OR, OBP } THRUSTERS;
 		typedef enum { NOGUID, M50, P7 } GUID;
 	};
+
+	// CONVERSIONS
+	// MANTYPE to string
+	std::string GetOPMManeuverType(OMPDefs::MANTYPE type);
+	// String to MANTYPE
+	OMPDefs::MANTYPE GetOPMManeuverType(std::string buf);
+	// THRESHOLD to string
+	std::string GetOPMManeuverThreshold(OMP::OMPDefs::THRESHOLD type);
+	// String to THRESHOLD
+	OMP::OMPDefs::THRESHOLD GetOPMThresholdType(std::string buf);
+	// SECONDARIES to string
+	std::string GetSecondaryName(OMP::OMPDefs::SECONDARIES sec);
+	// String to SECONDARIES
+	OMP::OMPDefs::SECONDARIES GetSecondaryType(std::string buf);
 
 	struct SecData
 	{
@@ -167,7 +184,8 @@ namespace OMP
 		OrbitalManeuverProcessor(OrbMech::GlobalConstants& cnst, OrbMech::SessionConstants& scnst);
 
 		//Parse input to internal format
-		bool ParseManeuverConstraintsTable(const std::vector< ManeuverConstraintsInput>& tab_in, std::vector < ManeuverConstraints>& tab_out, std::string &errormessage);
+		static bool ParseManeuverConstraintsTable(const std::vector< ManeuverConstraintsInput>& tab_in, std::vector < ManeuverConstraints>& tab_out, std::string &errormessage);
+		
 		//Run OMP
 		void Calculate(const OMPInputs& in, OMPOutputs &out);
 	protected:
@@ -183,7 +201,7 @@ namespace OMP
 		bool IsOMPConverged() const;
 		void CalculateManeuverEvalTable(OrbMech::StateVector sv_A0, OrbMech::StateVector sv_P0);
 		void PrintManeuverEvaluationTable();
-		void GetOMPError(int err, std::string& buf, unsigned int i = 0, unsigned int j = 0);
+		static void GetOMPError(int err, std::string& buf, unsigned int i = 0, unsigned int j = 0);
 
 		//Trajectory propagation
 		int coast_auto(OrbMech::StateVector sv0, double dt, OrbMech::StateVector& sv1) const;
@@ -219,12 +237,7 @@ namespace OMP
 		double GETfromGMT(double gmt) const;
 		OrbMech::StateVector ApplyLVLHManeuver(OrbMech::StateVector sv0, VECTOR3 DV_LVLH, int ThrustProfile, bool forwards = true) const;
 
-		std::string GetOPMManeuverType( OMPDefs::MANTYPE type);
-		OMPDefs::MANTYPE GetOPMManeuverType(std::string buf);
-
-		OMP::OMPDefs::THRESHOLD GetOPMThresholdType(std::string buf) const;
-		int GetOMPThresholdValue(std::string buf, OMP::OMPDefs::THRESHOLD type, double& val) const;
-		OMP::OMPDefs::SECONDARIES GetSecondaryType(std::string buf) const;
+		static int GetOMPThresholdValue(std::string buf, OMP::OMPDefs::THRESHOLD type, double& val);
 
 		void ApsidesMagnitudeDetermination(OrbMech::StateVector sv0, double& r_A, double& r_P) const; //Apogee/Perigee Magnitude Determination
 

@@ -42,6 +42,12 @@ public:
 	int AgeOfStateVector(std::string inputs[], double& age) const;
 	int CalculateDayOfYear(int Year, int Month, int Day, int& DOY) const;
 
+	// OMP
+	int ReadMCTFile(std::string file, std::vector<OMP::ManeuverConstraintsInput> &MCT) const;
+
+	OrbMech::SessionConstants* GetSessionConstants() {return &sescnst;}
+
+	double GetLWP_GMTLO() const;
 protected:
 
 	//General
@@ -50,8 +56,7 @@ protected:
 	void SetLaunchTime(int H, int M, double S);
 
 	//OMP
-	int ReadMCTFile(std::string file);
-	int ReadMCTLine(std::string line);
+	int ReadMCTLine(std::string line, std::vector<OMP::ManeuverConstraintsInput>& MCT) const;
 
 	//File parsing
 	void SaveStateVector(std::string file, const OrbMech::StateVector& sv);

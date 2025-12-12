@@ -25,6 +25,190 @@ using namespace OrbMech;
 
 namespace OMP
 {
+	std::string GetOPMManeuverType(OMPDefs::MANTYPE type)
+	{
+		if (type == OMPDefs::MANTYPE::HA) return "HA";
+		else if (type == OMPDefs::MANTYPE::HASH) return "HASH";
+		else if (type == OMPDefs::MANTYPE::NC) return "NC";
+		else if (type == OMPDefs::MANTYPE::EXDV) return "EXDV";
+		else if (type == OMPDefs::MANTYPE::NH) return "NH";
+		else if (type == OMPDefs::MANTYPE::SOI) return "SOI";
+		else if (type == OMPDefs::MANTYPE::SOR) return "SOR";
+		else if (type == OMPDefs::MANTYPE::NPC) return "NPC";
+		else if (type == OMPDefs::MANTYPE::NCC) return "NCC";
+		else if (type == OMPDefs::MANTYPE::APSO) return "APSO";
+		else if (type == OMPDefs::MANTYPE::CIRC) return "CIRC";
+		else if (type == OMPDefs::MANTYPE::NHRD) return "NHRD";
+		else if (type == OMPDefs::MANTYPE::NSR) return "NSR";
+		else if (type == OMPDefs::MANTYPE::NOSH) return "NOSH";
+		else if (type == OMPDefs::MANTYPE::PC) return "PC";
+		else if (type == OMPDefs::MANTYPE::TPI) return "TPI";
+		else if (type == OMPDefs::MANTYPE::TPF) return "TPF";
+		else if (type == OMPDefs::MANTYPE::LSDV) return "LSDV";
+
+		return "N/A";
+	}
+
+	OMPDefs::MANTYPE GetOPMManeuverType(std::string buf)
+	{
+		if (buf == "HA") return OMPDefs::HA;
+		else if (buf == "HASH") return OMPDefs::HASH;
+		else if (buf == "NC") return OMPDefs::NC;
+		else if (buf == "EXDV") return OMPDefs::EXDV;
+		else if (buf == "NH") return OMPDefs::NH;
+		else if (buf == "SOI") return OMPDefs::SOI;
+		else if (buf == "SOR") return OMPDefs::SOR;
+		else if (buf == "NPC") return OMPDefs::NPC;
+		else if (buf == "NCC") return OMPDefs::NCC;
+		else if (buf == "APSO") return OMPDefs::APSO;
+		else if (buf == "CIRC") return OMPDefs::CIRC;
+		else if (buf == "NHRD") return OMPDefs::NHRD;
+		else if (buf == "NSR") return OMPDefs::NSR;
+		else if (buf == "NOSH") return OMPDefs::NOSH;
+		else if (buf == "PC") return OMPDefs::PC;
+		else if (buf == "TPI") return OMPDefs::TPI;
+		else if (buf == "TPF") return OMPDefs::TPF;
+		else if (buf == "LSDV") return OMPDefs::LSDV;
+
+		return OMPDefs::NOMAN;
+	}
+
+	std::string GetOPMManeuverThreshold(OMP::OMPDefs::THRESHOLD type)
+	{
+		if (type == OMP::OMPDefs::THRESHOLD::THRES_T) return "T";
+		else if (type == OMP::OMPDefs::THRESHOLD::THRES_DT) return "DT";
+		else if (type == OMP::OMPDefs::THRESHOLD::THRES_DLT) return "DLT";
+		else if (type == OMP::OMPDefs::THRESHOLD::THRES_DTL) return "DTL";
+		else if (type == OMP::OMPDefs::THRESHOLD::THRES_M) return "M";
+		else if (type == OMP::OMPDefs::THRESHOLD::THRES_APS) return "APS";
+		else if (type == OMP::OMPDefs::THRESHOLD::THRES_CAN) return "CAN";
+		else if (type == OMP::OMPDefs::THRESHOLD::THRES_N) return "N";
+		else if (type == OMP::OMPDefs::THRESHOLD::THRES_REV) return "REV";
+		else if (type == OMP::OMPDefs::THRESHOLD::THRES_WT) return "WT";
+
+		return "N/A";
+	}
+
+	OMP::OMPDefs::THRESHOLD GetOPMThresholdType(std::string buf)
+	{
+		if (buf == "APS") return OMP::OMPDefs::THRESHOLD::THRES_APS;
+		else if (buf == "CAN") return OMP::OMPDefs::THRESHOLD::THRES_CAN;
+		else if (buf == "DLT") return OMP::OMPDefs::THRESHOLD::THRES_DLT;
+		else if (buf == "DT") return OMP::OMPDefs::THRESHOLD::THRES_DT;
+		else if (buf == "DTL") return OMP::OMPDefs::THRESHOLD::THRES_DTL;
+		else if (buf == "M") return OMP::OMPDefs::THRESHOLD::THRES_M;
+		else if (buf == "REV") return OMP::OMPDefs::THRESHOLD::THRES_REV;
+		else if (buf == "T") return OMP::OMPDefs::THRESHOLD::THRES_T;
+		else if (buf == "N") return OMP::OMPDefs::THRESHOLD::THRES_N;
+		else if (buf == "WT") return OMP::OMPDefs::THRESHOLD::THRES_WT;
+
+		return OMP::OMPDefs::THRESHOLD::NOTHR;
+	}
+
+	std::string GetSecondaryName(OMP::OMPDefs::SECONDARIES sec)
+	{
+		switch (sec)
+		{
+		case OMP::OMPDefs::SECONDARIES::A: return "A";
+		case OMP::OMPDefs::SECONDARIES::ALT: return "ALT";
+		case OMP::OMPDefs::SECONDARIES::APO: return "APO";
+		case OMP::OMPDefs::SECONDARIES::SEC_APS: return "APS";
+		case OMP::OMPDefs::SECONDARIES::ARG: return "ARG";
+		case OMP::OMPDefs::SECONDARIES::ASC: return "ASC";
+		case OMP::OMPDefs::SECONDARIES::CN: return "CN";
+		case OMP::OMPDefs::SECONDARIES::DEC: return "DEC";
+		case OMP::OMPDefs::SECONDARIES::DSC: return "DSC";
+		case OMP::OMPDefs::SECONDARIES::EL: return "EL";
+		case OMP::OMPDefs::SECONDARIES::LAT: return "LAT";
+		case OMP::OMPDefs::SECONDARIES::LON: return "LON";
+		case OMP::OMPDefs::SECONDARIES::N: return "N";
+		case OMP::OMPDefs::SECONDARIES::NA: return "NA";
+		case OMP::OMPDefs::SECONDARIES::NP: return "NP";
+		case OMP::OMPDefs::SECONDARIES::OPT: return "OPT";
+		case OMP::OMPDefs::SECONDARIES::P: return "P";
+		case OMP::OMPDefs::SECONDARIES::PER: return "PER";
+		case OMP::OMPDefs::SECONDARIES::RAS: return "RAS";
+		case OMP::OMPDefs::SECONDARIES::TGTA: return "TGTA";
+		case OMP::OMPDefs::SECONDARIES::TGTP: return "TGTP";
+		case OMP::OMPDefs::SECONDARIES::U: return "U";
+		case OMP::OMPDefs::SECONDARIES::HD: return "HD";
+		case OMP::OMPDefs::SECONDARIES::DV: return "DV";
+		case OMP::OMPDefs::SECONDARIES::DVLS: return "DVLS";
+		case OMP::OMPDefs::SECONDARIES::DVLV: return "DVLV";
+		case OMP::OMPDefs::SECONDARIES::LITI: return "LITI";
+		case OMP::OMPDefs::SECONDARIES::LITM: return "LITM";
+		case OMP::OMPDefs::SECONDARIES::LITO: return "LITO";
+		case OMP::OMPDefs::SECONDARIES::NITI: return "NITI";
+		case OMP::OMPDefs::SECONDARIES::NITM: return "NITM";
+		case OMP::OMPDefs::SECONDARIES::NITO: return "NITO";
+		case OMP::OMPDefs::SECONDARIES::CXYZ: return "CXYZ";
+		case OMP::OMPDefs::SECONDARIES::DH: return "DH";
+		case OMP::OMPDefs::SECONDARIES::DNOD: return "DNOD";
+		case OMP::OMPDefs::SECONDARIES::DPC: return "DPC";
+		case OMP::OMPDefs::SECONDARIES::DR: return "DR";
+		case OMP::OMPDefs::SECONDARIES::ITSR: return "ITSR";
+		case OMP::OMPDefs::SECONDARIES::MREV: return "MREV";
+		case OMP::OMPDefs::SECONDARIES::SEC_NULL: return "NULL";
+		case OMP::OMPDefs::SECONDARIES::PIT: return "PIT";
+		case OMP::OMPDefs::SECONDARIES::VFIL: return "VFIL";
+		case OMP::OMPDefs::SECONDARIES::YAW: return "YAW";
+		case OMP::OMPDefs::SECONDARIES::PHA: return "PHA";
+		case OMP::OMPDefs::SECONDARIES::WEDG: return "WEDG";
+		default: return "NOSEC";
+		}
+		return "NOSEC";
+	}
+
+	OMP::OMPDefs::SECONDARIES GetSecondaryType(std::string buf)
+	{
+		if (buf == "A") return OMP::OMPDefs::SECONDARIES::A;
+		else if (buf == "ALT") return OMP::OMPDefs::SECONDARIES::ALT;
+		else if (buf == "APO") return OMP::OMPDefs::SECONDARIES::APO;
+		else if (buf == "APS") return OMP::OMPDefs::SECONDARIES::SEC_APS;
+		else if (buf == "ARG") return OMP::OMPDefs::SECONDARIES::ARG;
+		else if (buf == "ASC") return OMP::OMPDefs::SECONDARIES::ASC;
+		else if (buf == "CN") return OMP::OMPDefs::SECONDARIES::CN;
+		else if (buf == "DEC") return OMP::OMPDefs::SECONDARIES::DEC;
+		else if (buf == "DSC") return OMP::OMPDefs::SECONDARIES::DSC;
+		else if (buf == "EL") return OMP::OMPDefs::SECONDARIES::EL;
+		else if (buf == "LAT") return OMP::OMPDefs::SECONDARIES::LAT;
+		else if (buf == "LON") return OMP::OMPDefs::SECONDARIES::LON;
+		else if (buf == "N") return OMP::OMPDefs::SECONDARIES::N;
+		else if (buf == "NA") return OMP::OMPDefs::SECONDARIES::NA;
+		else if (buf == "NP") return OMP::OMPDefs::SECONDARIES::NP;
+		else if (buf == "OPT") return OMP::OMPDefs::SECONDARIES::OPT;
+		else if (buf == "P") return OMP::OMPDefs::SECONDARIES::P;
+		else if (buf == "PER") return OMP::OMPDefs::SECONDARIES::PER;
+		else if (buf == "RAS") return OMP::OMPDefs::SECONDARIES::RAS;
+		else if (buf == "TGTA") return OMP::OMPDefs::SECONDARIES::TGTA;
+		else if (buf == "TGTP") return OMP::OMPDefs::SECONDARIES::TGTP;
+		else if (buf == "U") return OMP::OMPDefs::SECONDARIES::U;
+		else if (buf == "HD") return OMP::OMPDefs::SECONDARIES::HD;
+		else if (buf == "DV") return OMP::OMPDefs::SECONDARIES::DV;
+		else if (buf == "DVLS") return OMP::OMPDefs::SECONDARIES::DVLS;
+		else if (buf == "DVLV") return OMP::OMPDefs::SECONDARIES::DVLV;
+		else if (buf == "LITI") return OMP::OMPDefs::SECONDARIES::LITI;
+		else if (buf == "LITM") return OMP::OMPDefs::SECONDARIES::LITM;
+		else if (buf == "LITO") return OMP::OMPDefs::SECONDARIES::LITO;
+		else if (buf == "NITI") return OMP::OMPDefs::SECONDARIES::NITI;
+		else if (buf == "NITM") return OMP::OMPDefs::SECONDARIES::NITM;
+		else if (buf == "NITO") return OMP::OMPDefs::SECONDARIES::NITO;
+		else if (buf == "CXYZ") return OMP::OMPDefs::SECONDARIES::CXYZ;
+		else if (buf == "DH") return OMP::OMPDefs::SECONDARIES::DH;
+		else if (buf == "DNOD") return OMP::OMPDefs::SECONDARIES::DNOD;
+		else if (buf == "DPC") return OMP::OMPDefs::SECONDARIES::DPC;
+		else if (buf == "DR") return OMP::OMPDefs::SECONDARIES::DR;
+		else if (buf == "ITSR") return OMP::OMPDefs::SECONDARIES::ITSR;
+		else if (buf == "MREV") return OMP::OMPDefs::SECONDARIES::MREV;
+		else if (buf == "NULL") return OMP::OMPDefs::SECONDARIES::SEC_NULL;
+		else if (buf == "PIT") return OMP::OMPDefs::SECONDARIES::PIT;
+		else if (buf == "VFIL") return OMP::OMPDefs::SECONDARIES::VFIL;
+		else if (buf == "YAW") return OMP::OMPDefs::SECONDARIES::YAW;
+		else if (buf == "PHA") return OMP::OMPDefs::SECONDARIES::PHA;
+		else if (buf == "WEDG") return OMP::OMPDefs::SECONDARIES::WEDG;
+		else return OMP::OMPDefs::SECONDARIES::NOSEC;
+	}
+
 	OMPVariablesTable::OMPVariablesTable()
 	{
 		for (int i = 0; i < 5; i++)
@@ -127,7 +311,7 @@ bool OrbitalManeuverProcessor::ParseManeuverConstraintsTable(const std::vector<M
 			}
 			if (sscanf_s(tab_in[i].SecondaryValues[j].c_str(), "%lf", &sectemp.value) != 1)
 			{
-				GetOMPError(2006, errormessage, i); //Error 2006: Error parsing MCT, secondary value illegal
+				GetOMPError(2006, errormessage, i, j); //Error 2006: Error parsing MCT, secondary value illegal
 				return true;
 			}
 			temp.secondaries.push_back(sectemp);
@@ -1035,15 +1219,17 @@ int OrbitalManeuverProcessor::RunIterators()
 int OrbitalManeuverProcessor::ApplyManeuver()
 {
 	//Get state vector at maneuver TIG
-	OrbMech::StateVector sv_maneuver;
+	OrbMech::StateVector sv_maneuver, sv_maneuver_passive;
 
 	if (ManeuverData[CurMan].ChaserMan)
 	{
 		sv_maneuver = ManeuverData[CurMan].sv_A_bef_table;
+		sv_maneuver_passive = ManeuverData[CurMan].sv_P_bef_table;
 	}
 	else
 	{
 		sv_maneuver = ManeuverData[CurMan].sv_P_bef_table;
+		sv_maneuver_passive = ManeuverData[CurMan].sv_A_bef_table;
 	}
 
 	if (ManeuverConstraintsTable[CurMan].type == OMPDefs::MANTYPE::HA)
@@ -1193,6 +1379,25 @@ int OrbitalManeuverProcessor::ApplyManeuver()
 		double yaw = ManeuverData[CurMan].add_constraint.z;
 		ManeuverData[CurMan].dv_table = _V(dv * cos(pit) * cos(yaw), dv * sin(yaw), -dv * sin(pit) * cos(yaw));
 	}
+	else if (ManeuverConstraintsTable[CurMan].type == OMPDefs::MANTYPE::LSDV)
+	{
+		// Calculate matrix converting from LOS to inertial
+		MATRIX3 Rot_I_L, Rot_I_S;
+		VECTOR3 DV_iner;
+
+		// Check for position vectors being identical
+		if (length(sv_maneuver.R - sv_maneuver_passive.R) < 0.01)
+		{
+			return 34;	// Error 34: Chaser and target states identical, cannot calculate LSDV maneuver 
+		}
+
+		Rot_I_L = OrbMech::LVLH_Matrix(sv_maneuver.R, sv_maneuver.V);
+		Rot_I_S = OrbMech::LOS_Matrix(sv_maneuver.R, sv_maneuver.V, sv_maneuver_passive.R, sv_maneuver_passive.V);
+		// Convert to inertial
+		DV_iner = tmul(Rot_I_S, ManeuverData[CurMan].add_constraint);
+		// Convert to LVLH
+		ManeuverData[CurMan].dv_table = mul(Rot_I_L, DV_iner);
+		}
 	//Node Shift setting up common node 90° later
 	else if (ManeuverConstraintsTable[CurMan].type == OMPDefs::MANTYPE::NS)
 	{
@@ -1297,7 +1502,7 @@ void OrbitalManeuverProcessor::CalculateManeuverEvalTable(OrbMech::StateVector s
 		}
 
 		//Calculate maneuver parameters
-		man.type = GetOPMManeuverType(ManeuverTable[i].type);
+		man.type = OMP::GetOPMManeuverType(ManeuverTable[i].type);
 		man.name = ManeuverTable[i].name;
 		man.DVMag = length(ManeuverTable[i].dV_LVLH) / 0.3048;
 		man.GMTIG = ManeuverTable[i].TIG_GMT;
@@ -1892,105 +2097,12 @@ int OrbitalManeuverProcessor::QRDTPI(OrbMech::StateVector sv_P, double dh, doubl
 	return 1;
 }
 
-std::string OrbitalManeuverProcessor::GetOPMManeuverType(OMPDefs::MANTYPE type)
-{
-	if (type == OMPDefs::MANTYPE::HA) return "HA";
-	else if (type == OMPDefs::MANTYPE::HASH) return "HASH";
-	else if (type == OMPDefs::MANTYPE::NC) return "NC";
-	else if (type == OMPDefs::MANTYPE::EXDV) return "EXDV";
-	else if (type == OMPDefs::MANTYPE::NH) return "NH";
-	else if (type == OMPDefs::MANTYPE::SOI) return "SOI";
-	else if (type == OMPDefs::MANTYPE::SOR) return "SOR";
-	else if (type == OMPDefs::MANTYPE::NPC) return "NPC";
-	else if (type == OMPDefs::MANTYPE::NCC) return "NCC";
-	else if (type == OMPDefs::MANTYPE::APSO) return "APSO";
-	else if (type == OMPDefs::MANTYPE::CIRC) return "CIRC";
-	else if (type == OMPDefs::MANTYPE::NHRD) return "NHRD";
-	else if (type == OMPDefs::MANTYPE::NSR) return "NSR";
-	else if (type == OMPDefs::MANTYPE::NOSH) return "NOSH";
-	else if (type == OMPDefs::MANTYPE::PC) return "PC";
-	else if (type == OMPDefs::MANTYPE::TPI) return "TPI";
-	else if (type == OMPDefs::MANTYPE::TPF) return "TPF";
-
-	return "N/A";
-}
-
-OMPDefs::MANTYPE OrbitalManeuverProcessor::GetOPMManeuverType(std::string buf)
-{
-	if (buf == "HA") return OMPDefs::HA;
-	else if (buf == "HASH") return OMPDefs::HASH;
-	else if (buf == "NC") return OMPDefs::NC;
-	else if (buf == "EXDV") return OMPDefs::EXDV;
-	else if (buf == "NH") return OMPDefs::NH;
-	else if (buf == "SOI") return OMPDefs::SOI;
-	else if (buf == "SOR") return OMPDefs::SOR;
-	else if (buf == "NPC") return OMPDefs::NPC;
-	else if (buf == "NCC") return OMPDefs::NCC;
-	else if (buf == "APSO") return OMPDefs::APSO;
-	else if (buf == "CIRC") return OMPDefs::CIRC;
-	else if (buf == "NHRD") return OMPDefs::NHRD;
-	else if (buf == "NSR") return OMPDefs::NSR;
-	else if (buf == "NOSH") return OMPDefs::NOSH;
-	else if (buf == "PC") return OMPDefs::PC;
-	else if (buf == "TPI") return OMPDefs::TPI;
-	else if (buf == "TPF") return OMPDefs::TPF;
-
-	return OMPDefs::NOMAN;
-}
-
-OMP::OMPDefs::THRESHOLD OrbitalManeuverProcessor::GetOPMThresholdType(std::string buf) const
-{
-	OMP::OMPDefs::THRESHOLD type = OMP::OMPDefs::THRESHOLD::NOTHR;
-
-	if (buf == "APS")
-	{
-		type = OMP::OMPDefs::THRESHOLD::THRES_APS;
-	}
-	else if (buf == "CAN")
-	{
-		type = OMP::OMPDefs::THRESHOLD::THRES_CAN;
-	}
-	else if (buf == "DLT")
-	{
-		type = OMP::OMPDefs::THRESHOLD::THRES_DLT;
-	}
-	else if (buf == "DT")
-	{
-		type = OMP::OMPDefs::THRESHOLD::THRES_DT;
-	}
-	else if (buf == "DTL")
-	{
-		type = OMP::OMPDefs::THRESHOLD::THRES_DTL;
-	}
-	else if (buf == "M")
-	{
-		type = OMP::OMPDefs::THRESHOLD::THRES_M;
-	}
-	else if (buf == "REV")
-	{
-		type = OMP::OMPDefs::THRESHOLD::THRES_REV;
-	}
-	else if (buf == "T")
-	{
-		type = OMP::OMPDefs::THRESHOLD::THRES_T;
-	}
-	else if (buf == "N")
-	{
-		type = OMP::OMPDefs::THRESHOLD::THRES_N;
-	}
-	else if (buf == "WT")
-	{
-		type = OMP::OMPDefs::THRESHOLD::THRES_WT;
-	}
-	return type;
-}
-
 double DDDHHHMMSS2MET(int dd, int hh, int mm, double ss)
 {
 	return ss + 60.0 * mm + 3600.0 * hh + 24.0 * 3600.0 * dd;
 }
 
-int OrbitalManeuverProcessor::GetOMPThresholdValue(std::string buf, OMP::OMPDefs::THRESHOLD type, double& val) const
+int OrbitalManeuverProcessor::GetOMPThresholdValue(std::string buf, OMP::OMPDefs::THRESHOLD type, double& val)
 {
 	switch (type)
 	{
@@ -2025,57 +2137,6 @@ int OrbitalManeuverProcessor::GetOMPThresholdValue(std::string buf, OMP::OMPDefs
 	}
 
 	return 0;
-}
-
-OMP::OMPDefs::SECONDARIES OrbitalManeuverProcessor::GetSecondaryType(std::string buf) const
-{
-	if (buf == "A") return OMP::OMPDefs::SECONDARIES::A;
-	else if (buf == "ALT") return OMP::OMPDefs::SECONDARIES::ALT;
-	else if (buf == "APO") return OMP::OMPDefs::SECONDARIES::APO;
-	else if (buf == "APS") return OMP::OMPDefs::SECONDARIES::SEC_APS;
-	else if (buf == "ARG") return OMP::OMPDefs::SECONDARIES::ARG;
-	else if (buf == "ASC") return OMP::OMPDefs::SECONDARIES::ASC;
-	else if (buf == "CN") return OMP::OMPDefs::SECONDARIES::CN;
-	else if (buf == "DEC") return OMP::OMPDefs::SECONDARIES::DEC;
-	else if (buf == "DSC") return OMP::OMPDefs::SECONDARIES::DSC;
-	else if (buf == "EL") return OMP::OMPDefs::SECONDARIES::EL;
-	else if (buf == "LAT") return OMP::OMPDefs::SECONDARIES::LAT;
-	else if (buf == "LON") return OMP::OMPDefs::SECONDARIES::LON;
-	else if (buf == "N") return OMP::OMPDefs::SECONDARIES::N;
-	else if (buf == "NA") return OMP::OMPDefs::SECONDARIES::NA;
-	else if (buf == "NP") return OMP::OMPDefs::SECONDARIES::NP;
-	else if (buf == "OPT") return OMP::OMPDefs::SECONDARIES::OPT;
-	else if (buf == "P") return OMP::OMPDefs::SECONDARIES::P;
-	else if (buf == "PER") return OMP::OMPDefs::SECONDARIES::PER;
-	else if (buf == "RAS") return OMP::OMPDefs::SECONDARIES::RAS;
-	else if (buf == "TGTA") return OMP::OMPDefs::SECONDARIES::TGTA;
-	else if (buf == "TGTP") return OMP::OMPDefs::SECONDARIES::TGTP;
-	else if (buf == "U") return OMP::OMPDefs::SECONDARIES::U;
-	else if (buf == "HD") return OMP::OMPDefs::SECONDARIES::HD;
-	else if (buf == "DV") return OMP::OMPDefs::SECONDARIES::DV;
-	else if (buf == "DVLS") return OMP::OMPDefs::SECONDARIES::DVLS;
-	else if (buf == "DVLV") return OMP::OMPDefs::SECONDARIES::DVLV;
-	else if (buf == "LITI") return OMP::OMPDefs::SECONDARIES::LITI;
-	else if (buf == "LITM") return OMP::OMPDefs::SECONDARIES::LITM;
-	else if (buf == "LITO") return OMP::OMPDefs::SECONDARIES::LITO;
-	else if (buf == "NITI") return OMP::OMPDefs::SECONDARIES::NITI;
-	else if (buf == "NITM") return OMP::OMPDefs::SECONDARIES::NITM;
-	else if (buf == "NITO") return OMP::OMPDefs::SECONDARIES::NITO;
-	else if (buf == "CXYZ") return OMP::OMPDefs::SECONDARIES::CXYZ;
-	else if (buf == "DH") return OMP::OMPDefs::SECONDARIES::DH;
-	else if (buf == "DNOD") return OMP::OMPDefs::SECONDARIES::DNOD;
-	else if (buf == "DPC") return OMP::OMPDefs::SECONDARIES::DPC;
-	else if (buf == "DR") return OMP::OMPDefs::SECONDARIES::DR;
-	else if (buf == "ITSR") return OMP::OMPDefs::SECONDARIES::ITSR;
-	else if (buf == "MREV") return OMP::OMPDefs::SECONDARIES::MREV;
-	else if (buf == "NULL") return OMP::OMPDefs::SECONDARIES::SEC_NULL;
-	else if (buf == "PIT") return OMP::OMPDefs::SECONDARIES::PIT;
-	else if (buf == "VFIL") return OMP::OMPDefs::SECONDARIES::VFIL;
-	else if (buf == "YAW") return OMP::OMPDefs::SECONDARIES::YAW;
-	else if (buf == "PHA") return OMP::OMPDefs::SECONDARIES::PHA;
-	else if (buf == "WEDG") return OMP::OMPDefs::SECONDARIES::WEDG;
-	else if (buf == "ELA") return OMP::OMPDefs::SECONDARIES::ELA;
-	else return OMP::OMPDefs::SECONDARIES::NOSEC;
 }
 
 void OrbitalManeuverProcessor::ApsidesMagnitudeDetermination(OrbMech::StateVector sv0, double& r_A, double& r_P) const
@@ -2550,107 +2611,42 @@ VECTOR3 OrbitalManeuverProcessor::PlaneChangeManeuver(OrbMech::StateVector sv0, 
 
 void OrbitalManeuverProcessor::GetOMPError(int err, std::string &buf, unsigned int i, unsigned int j)
 {
-	//Old
-	if (err == 5)
-	{
-		buf = "Error: a maneuver doesn't have a threshold";
-	}
-	else if (err == 6)
-	{
-		buf = "Error: could not find HD constraint for HA maneuver";
-	}
-	else if (err == 7)
-	{
-		buf = "Error: NC maneuver has no DR constraint specified";
-	}
-	else if (err == 8)
-	{
-		buf = "Error: NH maneuver has no DH constraint specified";
-	}
-	else if (err == 9)
-	{
-		buf = "Error: too many CXYZ components specified";
-	}
-	else if (err == 10)
-	{
-		buf = "Error: not enough CXYZ components specified";
-	}
-	else if (err == 11)
-	{
-		buf = "Error: no maneuver after SOI/NCC";
-	}
-	else if (err == 12)
-	{
-		buf = "Error: wrong maneuver after SOI";
-	}
-	else if (err == 14)
-	{
-		buf = "Error: CN secondary only applies to NPC";
-	}
-	else if (err == 20)
-	{
-		buf = "Error: Too many iterations";
-	}
-	else if (err == 22)
-	{
-		buf = "Error: More than one NPC maneuver specified";
-	}
-	else if (err == 23)
-	{
-		buf = "Error: No valid threshold for SOI/NCC";
-	}
-	else if (err == 24)
-	{
-		buf = "Error: could not find DNOD constraint for NOSH maneuver";
-	}
-	else if (err == 25)
-	{
-		buf = "Error: OPT secondary only applies to NOSH";
-	}
-	else if (err == 26)
-	{
-		buf = "Error: Routine SEARMT could not find maneuver point";
-	}
-	else if (err == 27)
-	{
-		buf = "Error: could not find DPC constraint for PC maneuver";
-	}
-	else if (err == 28)
-	{
-		buf = "Error: HA maneuver failed to converge";
-	}
-	else if (err == 29)
-	{
-		buf = "Error: HASH maneuver failed to converge";
-	}
-	else if (err == 30)
-	{
-		buf = "Error: CIRC maneuver failed to converge";
-	}
-	else if (err == 31)
-	{
-		buf = "Error: Failed to converge on common node";
-	}
-	else if (err == 100)
-	{
-		buf = "Error: No target vessel.";
-	}
-	else
-	{
-		buf = "";
-	}
-
-	//New
 	switch (err)
 	{
-	case 1:		buf = "Error: No maneuvers in constraint table";		break;
-	case 2:		buf = "Error: First maneuver needs a T as threshold";	break;
-	case 3:		buf = "Error: Not enough DV components specified";		break;
-	case 4:		buf = "Error: Too many DV components specified";		break;
-	case 32:	buf = "Error: Wrong vehicle code in VFIL secondary";	break;
-	case 1001:	buf = "Error: Trajectory became reentrant.";			break;
-	case 1002:	buf = "Error: Kepler error in integrator.";				break;
+	case 0:		buf = "Calculation successful!";								break;
+	case 1:		buf = "Error: No maneuvers in constraint table";				break;
+	case 2:		buf = "Error: First maneuver needs a T as threshold";			break;
+	case 3:		buf = "Error: Not enough DV components specified";				break;
+	case 4:		buf = "Error: Too many DV components specified";				break;
+	case 5:		buf = "Error: A maneuver doesn't have a threshold";				break;
+	case 6:		buf = "Error: could not find HD constraint for HA maneuver";	break;
+	case 7:		buf = "Error: NC maneuver has no DR constraint specified";		break;
+	case 8:		buf = "Error: NH maneuver has no DH constraint specified";		break;
+	case 9:		buf = "Error: too many CXYZ components specified";				break;
+	case 10:	buf = "Error: not enough CXYZ components specified";			break;
+	case 11:	buf = "Error: no maneuver after SOI/NCC";						break;
+	case 12:	buf = "Error: wrong maneuver after SOI";						break;
+	case 14:	buf = "Error: CN secondary only applies to NPC";				break;
+	case 20:	buf = "Error: Too many iterations";								break;
+	case 22:	buf = "Error: More than one NPC maneuver specified";			break;
+	case 23:	buf = "Error: No valid threshold for SOI/NCC";					break;
+	case 24:	buf = "Error: could not find DNOD constraint for NOSH maneuver"; break;
+	case 25:	buf = "Error: OPT secondary only applies to NOSH";				break;
+	case 26:	buf = "Error: Routine SEARMT could not find maneuver point";	break;
+	case 27:	buf = "Error: could not find DPC constraint for PC maneuver";	break;
+	case 28:	buf = "Error: HA maneuver failed to converge";					break;
+	case 29:	buf = "Error: HASH maneuver failed to converge";				break;
+	case 30:	buf = "Error: CIRC maneuver failed to converge";				break;
+	case 31:	buf = "Error: Failed to converge on common node";				break;
+	case 32:	buf = "Error: Wrong vehicle code in VFIL secondary";			break;
+	case 33:	buf = "Error: Wrong thruster code in VFIL secondary";			break;
+	case 34:	buf = "Error: Chaser and target states identical";				break;
+	case 100:	buf = "Error: No target vessel.";								break;
+	case 1001:	buf = "Error: Trajectory became reentrant.";					break;
+	case 1002:	buf = "Error: Kepler error in integrator.";						break;
 	case 2003:	buf = "Error parsing MCT, threshold type of maneuver " + std::to_string(i + 1) + " illegal";		break;
+	case 2005:	buf = "Error parsing MCT, secondary type illegal, maneuver " + std::to_string(i + 1) + ", secondary " + std::to_string(j + 1);		break;
+	default:	buf = "Error: unknown error";									break;
 	}
 }
 
