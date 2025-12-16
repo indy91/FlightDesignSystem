@@ -2642,11 +2642,13 @@ void OrbitalManeuverProcessor::GetOMPError(int err, std::string &buf, unsigned i
 	case 33:	buf = "Error: Wrong thruster code in VFIL secondary";			break;
 	case 34:	buf = "Error: Chaser and target states identical";				break;
 	case 100:	buf = "Error: No target vessel.";								break;
+	case 101:	buf = "Error: Time theta error.";								break;
 	case 1001:	buf = "Error: Trajectory became reentrant.";					break;
 	case 1002:	buf = "Error: Kepler error in integrator.";						break;
 	case 2003:	buf = "Error parsing MCT, threshold type of maneuver " + std::to_string(i + 1) + " illegal";		break;
 	case 2005:	buf = "Error parsing MCT, secondary type illegal, maneuver " + std::to_string(i + 1) + ", secondary " + std::to_string(j + 1);		break;
-	default:	buf = "Error: unknown error";									break;
+	case 2006:	buf = "Error parsing MCT, secondary value illegal, maneuver " + std::to_string(i + 1) + ", secondary " + std::to_string(j + 1);		break;
+	default:	buf = "Error: unknown error (" + std::to_string(err) + ")";		break;
 	}
 }
 

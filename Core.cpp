@@ -293,7 +293,7 @@ int Core::SaveLWPStateVector(std::string filename)
 {
 	if (PVTABC.GMT != 0.0)
 	{
-		SaveStateVector(ProjectFolder + "State Vectors/LWP.txt", PVTABC);
+		SaveStateVector(ProjectFolder + "State Vectors/" + filename + ".txt", PVTABC);
 		return 0;
 	}
 	return 1;

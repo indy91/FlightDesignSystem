@@ -1958,7 +1958,10 @@ void FDSFrame::OnButton_Save_MCT(wxCommandEvent& event)
     wxString path = "Projects/" + project + "/";
     wxString filepath = path + str;
 
-    if (wxFile::Exists(filepath))
+    //Save file
+    wxTextFile file(filepath);
+
+    if (file.Exists())
     {
         wxMessageDialog dialog(NULL, wxT("The file already exists. Overwrite?"),
             wxT("Save file"),
@@ -1972,9 +1975,13 @@ void FDSFrame::OnButton_Save_MCT(wxCommandEvent& event)
             return;
         }
     }
+    else
+    {
+        file.Create();
+    }
 
     //Write to file
-    wxTextFile file(filepath);
+   
     if (!file.Open())
         return;
 
