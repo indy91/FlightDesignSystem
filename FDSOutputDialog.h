@@ -21,9 +21,8 @@ program. If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-class FDSOutputDialog : public wxDialog
+class FDSOutputDialog : public wxFrame
 {
 public:
     FDSOutputDialog(const wxString& title, const std::vector<std::string>& data);
-
 };

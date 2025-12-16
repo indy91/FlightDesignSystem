@@ -19,7 +19,7 @@ program. If not, see <https://www.gnu.org/licenses/>.
 #include <wx/stattext.h>
 #include <wx/statline.h>
 
-FDSOutputDialog::FDSOutputDialog(const wxString& title, const std::vector<std::string>& data) : wxDialog(NULL, wxID_ANY, title,
+FDSOutputDialog::FDSOutputDialog(const wxString& title, const std::vector<std::string>& data) : wxFrame(NULL, wxID_ANY, title,
     wxDefaultPosition, wxSize(768, 768), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
 
