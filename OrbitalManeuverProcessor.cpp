@@ -1641,6 +1641,8 @@ OrbMech::StateVector OrbitalManeuverProcessor::ApplyLVLHManeuver(OrbMech::StateV
 
 int OrbitalManeuverProcessor::coast_auto(OrbMech::StateVector sv, double dt, OrbMech::StateVector& sv_out) const
 {
+	// OUTPUTS:
+	// return value: 0 = no error, 1001 = trajectory became reentrant, 1002 = Kepler error
 	EnckeIntegrator integ(constants);
 
 	EnckeIntegratorInput inp;
@@ -1659,7 +1661,10 @@ int OrbitalManeuverProcessor::coast_auto(OrbMech::StateVector sv, double dt, Orb
 
 	integ.Propagate(inp, outp);
 
-	if (outp.Error) return outp.Error + 1000;
+	if (outp.Error)
+	{
+		return outp.Error + 1000;
+	}
 
 	sv_out.R = outp.R;
 	sv_out.V = outp.V;
@@ -1676,7 +1681,7 @@ int OrbitalManeuverProcessor::DeltaOrbitsAuto(OrbMech::StateVector sv0, double M
 int OrbitalManeuverProcessor::GeneralTrajectoryPropagation(OrbMech::StateVector sv0, int opt, double param, double DN, OrbMech::StateVector& sv1) const
 {
 	//opt: 0 = time, 1 = mean anomaly, 2 = argument of latitude, 3 = maneuver line
-	//Error codes:
+	//Error codes: 1001 = trajectory became reentrant, 1002 = Kepler error
 
 	int err;
 
@@ -1801,7 +1806,7 @@ int OrbitalManeuverProcessor::GeneralTrajectoryPropagation(OrbMech::StateVector 
 			err = coast_auto(sv1, ddt, sv1);
 			if (err)
 			{
-				return err + 1000;
+				return err;
 			}
 
 			osc1 = OrbMech::CartesianToKeplerian(sv1.R, sv1.V, constants.mu);
@@ -2645,7 +2650,10 @@ void OrbitalManeuverProcessor::GetOMPError(int err, std::string &buf, unsigned i
 	case 101:	buf = "Error: Time theta error.";								break;
 	case 1001:	buf = "Error: Trajectory became reentrant.";					break;
 	case 1002:	buf = "Error: Kepler error in integrator.";						break;
-	case 2003:	buf = "Error parsing MCT, threshold type of maneuver " + std::to_string(i + 1) + " illegal";		break;
+	case 2001:	buf = "Error parsing MCT, maneuver name of maneuver " + std::to_string(i + 1) + " too long";	break;
+	case 2002:	buf = "Error parsing MCT, maneuver type of maneuver " + std::to_string(i + 1) + " illegal";		break;
+	case 2003:	buf = "Error parsing MCT, threshold type of maneuver " + std::to_string(i + 1) + " illegal";	break;
+	case 2004:	buf = "Error parsing MCT, threshold value of maneuver " + std::to_string(i + 1) + " illegal";	break;
 	case 2005:	buf = "Error parsing MCT, secondary type illegal, maneuver " + std::to_string(i + 1) + ", secondary " + std::to_string(j + 1);		break;
 	case 2006:	buf = "Error parsing MCT, secondary value illegal, maneuver " + std::to_string(i + 1) + ", secondary " + std::to_string(j + 1);		break;
 	default:	buf = "Error: unknown error (" + std::to_string(err) + ")";		break;
