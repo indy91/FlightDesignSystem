@@ -536,37 +536,32 @@ void FDSFrame::AddOMPPage()
     new wxButton(panel3, ID_Button_OMPGenerate, wxT("Generate"),
         wxPoint(10, 514), wxDefaultSize);
 
-
     //MCT
-    new wxStaticText(panel3, wxID_ANY, "Maneuver Constraints Table", wxPoint(500, 10));
-    wxPanel *temp = new wxPanel(panel3, wxID_ANY, wxPoint(400, 40), wxSize(550, 300), wxBORDER_SIMPLE);
+    new wxStaticText(panel3, wxID_ANY, "Maneuver Constraints Table", wxPoint(550, 10));
+    wxPanel *temp = new wxPanel(panel3, wxID_ANY, wxPoint(350, 40), wxSize(650, 300), wxBORDER_SIMPLE);
 
-    textOMP_MCT_Editor = new wxGrid(temp, wxID_ANY, wxDefaultPosition, wxSize(550, 300));
+    textOMP_MCT_Editor = new wxGrid(temp, wxID_ANY, wxDefaultPosition, wxSize(650, 300));
 
-    textOMP_MCT_Editor->CreateGrid(41, 13);
-    textOMP_MCT_Editor->SetCellValue(0, 0, wxT("Name"));
-    textOMP_MCT_Editor->SetCellValue(0, 1, wxT("Type"));
-    textOMP_MCT_Editor->SetCellValue(0, 2, wxT("Threshold"));
-    textOMP_MCT_Editor->SetCellValue(0, 3, wxT("Value"));
-    textOMP_MCT_Editor->SetCellValue(0, 4, wxT("Secondary 1"));
-    textOMP_MCT_Editor->SetCellValue(0, 5, wxT("Secondary 2"));
-    textOMP_MCT_Editor->SetCellValue(0, 6, wxT("Secondary 3"));
-    textOMP_MCT_Editor->SetCellValue(0, 7, wxT("Secondary 4"));
-    textOMP_MCT_Editor->SetCellValue(0, 8, wxT("Secondary 5"));
-    textOMP_MCT_Editor->SetCellValue(0, 9, wxT("Secondary 6"));
-    textOMP_MCT_Editor->SetCellValue(0, 10, wxT("Secondary 7"));
-    textOMP_MCT_Editor->SetCellValue(0, 11, wxT("Secondary 8"));
-    textOMP_MCT_Editor->SetCellValue(0, 12, wxT("Secondary 9"));
-
-    for (int i = 0; i < 13; i++)
-    {
-        textOMP_MCT_Editor->SetReadOnly(0, i);
-    }
+    textOMP_MCT_Editor->CreateGrid(40, 13);
 
     textOMP_MCT_Editor->SetColSize(0, 50);
     textOMP_MCT_Editor->SetColSize(1, 50);
     textOMP_MCT_Editor->SetColSize(2, 60);
     textOMP_MCT_Editor->SetColSize(3, 95);
+
+    textOMP_MCT_Editor->SetColLabelValue(0, "Name");
+    textOMP_MCT_Editor->SetColLabelValue(1, "Type");
+    textOMP_MCT_Editor->SetColLabelValue(2, "Threshold");
+    textOMP_MCT_Editor->SetColLabelValue(3, "Value");
+    textOMP_MCT_Editor->SetColLabelValue(4, "Secondary 1");
+    textOMP_MCT_Editor->SetColLabelValue(5, "Secondary 2");
+    textOMP_MCT_Editor->SetColLabelValue(6, "Secondary 3");
+    textOMP_MCT_Editor->SetColLabelValue(7, "Secondary 4");
+    textOMP_MCT_Editor->SetColLabelValue(8, "Secondary 5");
+    textOMP_MCT_Editor->SetColLabelValue(9, "Secondary 6");
+    textOMP_MCT_Editor->SetColLabelValue(10, "Secondary 7");
+    textOMP_MCT_Editor->SetColLabelValue(11, "Secondary 8");
+    textOMP_MCT_Editor->SetColLabelValue(12, "Secondary 9");
 
     new wxButton(panel3, ID_Button_MCT_Save, wxT("Save"),
         wxPoint(450, 414), wxDefaultSize);
@@ -1039,15 +1034,46 @@ void FDSFrame::OnButtonLWPGenerate(wxCommandEvent& event)
 
 void FDSFrame::OnButtonLWPSaveStateVector(wxCommandEvent& event)
 {
-    if (core == NULL) return;
+    if (core == NULL)
+    {
+        SetStatusText("Launch day not initialized!");
+        return;
+    }
 
     wxTextEntryDialog dialog(this, "Enter name for the file:", "LWP chaser state vector file", "LWP", wxOK | wxCANCEL);
 
     if (dialog.ShowModal() == wxID_OK)
     {
         wxString str = dialog.GetValue();
+        wxString project = textProjectFile->GetLineText(0);
+        wxString path = "Projects/" + project + "/State Vectors/";
+        wxString filepath = path + str + ".txt";
+
+        //Save file
+        wxTextFile file(filepath);
+
+        if (file.Exists())
+        {
+            wxMessageDialog dialog(NULL, wxT("The file already exists. Overwrite?"),
+                wxT("Save file"),
+                wxNO_DEFAULT | wxYES_NO);
+
+            switch (dialog.ShowModal())
+            {
+            case wxID_YES:
+                break;
+            default:
+                return;
+            }
+        }
+        else
+        {
+            file.Create();
+        }
+        file.Close();
+
         core->SaveLWPStateVector(str.ToStdString());
-    }  
+    }
 }
 
 void FDSFrame::OnButtonOMPGenerate(wxCommandEvent& event)
@@ -1994,6 +2020,8 @@ void FDSFrame::OnButton_Save_MCT(wxCommandEvent& event)
 
     file.Write();
     file.Close();
+
+    SetStatusText("MCT file saved!");
 }
 
 void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)
@@ -2075,6 +2103,20 @@ void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)
     {
         file.Create();
     }
+    else
+    {
+        wxMessageDialog dialog(NULL, wxT("The file already exists. Overwrite?"),
+            wxT("Save file"),
+            wxNO_DEFAULT | wxYES_NO);
+
+        switch (dialog.ShowModal())
+        {
+        case wxID_YES:
+            break;
+        default:
+            return;
+        }
+    }
 
     if (!file.Open())
     {
@@ -2091,4 +2133,6 @@ void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)
 
     file.Write();
     file.Close();
+
+    SetStatusText("File export successful!");
 }

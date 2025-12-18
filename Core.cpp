@@ -648,9 +648,6 @@ int Core::ReadMCTFile(std::string file, std::vector<OMP::ManeuverConstraintsInpu
 
 	std::string line;
 	int i;
-
-	//Ignore first line
-	std::getline(myfile, line);
 	
 	i = 1;
 
