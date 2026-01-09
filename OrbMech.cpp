@@ -1530,44 +1530,129 @@ namespace OrbMech
 		}
 	}
 
-	void SecularRates(StateVector sv, CELEMENTS coe, const GlobalConstants& cnst, double &ldot, double &gdot)
+	void BrouwerSecularRates(CELEMENTS coe_osc, CELEMENTS coe_mean, const GlobalConstants& cnst, double& l_dot, double& g_dot, double& h_dot)
 	{
-		//sv and coe are identical, just provided for convenience
+		double n0, eccdp2, cn, cn2, theta, theta2, theta3, theta4, k2, k4, gm2, gm4, gmp2, gmp4;
+		double esing, ecosg, L, u, f, sin_lat, R, ainv;
 
-		//Short period J2
-		double r, f, u, p, ar3, da_sp, theta, theta2, theta4, eta, eta2, k2, gamma2, gamma2_apo;
-		//Mean semi-major axis
-		double MA;
-		//Mean inclination
-		double MI;
-		double n0;
-
-		r = length(sv.R);
-		f = MeanToTrueAnomaly(coe.l, coe.e);
-		u = f + coe.g;
-		p = coe.a * (1.0 - coe.e * coe.e);
-
-		ar3 = pow(coe.a / r, 3);
-		da_sp = cnst.J2 * pow(cnst.R_E, 2) / coe.a * (ar3 - 1.0 / pow(1.0 - pow(coe.e, 2), 1.5) + (-ar3 + 1.0 / pow(1.0 - pow(coe.e, 2), 1.5) + ar3 * cos(2.0 * u)) * 3.0 * pow(sin(coe.i), 2) / 2.0);
-		MA = coe.a - da_sp;
-
-		//Constants
-		n0 = sqrt(cnst.mu / pow(MA, 3));
-		MI = coe.i - 1.5 * cnst.J2 * pow(cnst.R_E, 2) / (4.0 * p * p) * sin(2.0 * coe.i) * cos(2.0 * u);
-		theta = cos(MI);
+		n0 = sqrt(cnst.mu / pow(coe_mean.a, 3));
+		eccdp2 = coe_mean.e * coe_mean.e;
+		cn2 = 1.0 - eccdp2;
+		cn = sqrt(cn2);
+		theta = cos(coe_mean.i);
 		theta2 = theta * theta;
+		theta3 = theta2 * theta;
 		theta4 = theta2 * theta2;
-		eta = sqrt(1.0 - pow(coe.e, 2));
-		eta2 = eta * eta;
 		k2 = cnst.J2 * pow(cnst.R_E, 2) / 2.0;
-		gamma2 = k2 / pow(MA, 2);
-		gamma2_apo = gamma2 / pow(eta, 4);
+		k4 = -3.0 * cnst.J4 * pow(cnst.R_E, 4) / 8.0;
+		gm2 = k2 / pow(coe_mean.a, 2);
+		gm4 = k4 / pow(coe_mean.a, 4);
+		gmp2 = gm2 / pow(cn2, 2);
+		gmp4 = gm4 / pow(cn2, 4);
 
-		//Mean anomaly rate
-		ldot = PI2 / REVTIM(sv.R, sv.V, cnst);
+		esing = coe_osc.e * sin(coe_osc.g);
+		ecosg = coe_osc.e * cos(coe_osc.g);
+		L = coe_osc.l + coe_osc.g;
+		u = L + (2.0 * ecosg * sin(L) - 2.0 * esing * cos(L)) * (1.0 + 5.0 / 4.0 * ecosg * cos(L) + esing * sin(L));
+		f = u - coe_osc.g;
+		sin_lat = sin(u) * sin(coe_osc.i);
+		R = coe_osc.a * (1.0 - coe_osc.e * coe_osc.e) / (1.0 + coe_osc.e * cos(f));
+		ainv = 1.0 / coe_osc.a + cnst.J2 * pow(cnst.R_E, 2) / pow(R, 3) * (1.0 - 3.0 * pow(sin_lat, 2)) + cnst.J3 * pow(cnst.R_E, 3) / pow(R, 4) * (3.0 * sin_lat - 5.0 * pow(sin_lat, 3)) -
+			cnst.J4 * pow(cnst.R_E, 4) / (4.0 * pow(R, 5)) * (3.0 - 30.0 * pow(sin_lat, 2) + 35.0 * pow(sin_lat, 4));
+		l_dot = sqrt(cnst.mu * pow(ainv, 3));
 
-		//Argument of perigee rate
-		gdot = n0 * (gamma2_apo * (1.5 * (5.0 * theta2 - 1.0) + 3.0 / 32.0 * gamma2_apo * (25.0 * eta2 + 24.0 * eta - 35.0 + (90.0 - 192.0 * eta - 126.0 * eta2) * theta2 + (385.0 + 360.0 * eta + 45.0 * eta2) * theta4)));
+		//l_dot = n0 + n0 * cn*(gmp2*(3.0 / 2.0*(3.0*theta2 - 1.0) + 3.0 / 32.0*gmp2*(25.0*cn2 + 16.0*cn - 15.0 + (30.0 - 96.0*cn - 90.0*cn2)*theta2
+		//	+ (105.0 + 144.0*cn + 25.0*cn2)*theta4)) + 15.0 / 16.0*gmp4*eccdp2*(3.0 - 30.0*theta2 + 35.0*theta4));
+		g_dot = n0 * (gmp2 * (3.0 / 2.0 * (5.0 * theta2 - 1.0) + 3.0 / 32.0 * gmp2 * (25.0 * cn2 + 24.0 * cn - 35.0
+			+ (90.0 - 192.0 * cn - 126.0 * cn2) * theta2 + (385.0 + 360.0 * cn + 45.0 * cn2) * theta4))
+			+ 5.0 / 16.0 * gmp4 * (21.0 - 9.0 * cn2 + (126.0 * cn2 - 270.0) * theta2 + (385.0 - 189.0 * cn2) * theta4));
+		h_dot = n0 * (gmp2 * (3.0 / 8.0 * gmp2 * ((9.0 * cn2 + 12.0 * cn - 5.0) * theta - (35.0 + 36.0 * cn + 5.0 * cn2) * theta3) - 3.0 * theta)
+			+ 5.0 / 4.0 * gmp4 * theta * (5.0 - 3.0 * cn2) * (3.0 - 7.0 * theta2));
+	}
+
+	int KwokMeanElements(CELEMENTS coe_osc, const GlobalConstants& cnst, CELEMENTS& coe_mean)
+	{
+		// Mean elements not accurate for analytic propagation, only better estimates
+
+		if (coe_osc.e > 1.0) return 1;
+
+		double p, f, r, u;
+
+		// Intermediate parameters
+		p = coe_osc.a * (1.0 - coe_osc.e * coe_osc.e);
+		f = MeanToTrueAnomaly(coe_osc.l, coe_osc.e);
+		u = f + coe_osc.g;
+		if (u >= PI2)
+		{
+			u -= PI2;
+		}
+		r = p / (1.0 + coe_osc.e * cos(f));
+
+		//Mean inclination and longitude of the ascending node
+
+		coe_mean.i = coe_osc.i - 1.5 * cnst.J2 * pow(cnst.R_E, 2) / (4.0 * p * p) * sin(2.0 * coe_osc.i) * cos(2.0 * u);
+		coe_mean.h = coe_osc.h - 1.5 * cnst.J2 * pow(cnst.R_E, 2) / (2.0 * p * p) * cos(coe_mean.i) * sin(2.0 * u);
+
+		//Estimate the mean semi-major axis
+		double ar3, da_sp;
+
+		ar3 = pow(coe_osc.a / r, 3);
+		da_sp = cnst.J2 * pow(cnst.R_E, 2) / coe_osc.a * (ar3 - 1.0 / pow(1.0 - pow(coe_osc.e, 2), 1.5) + (-ar3 + 1.0 / pow(1.0 - pow(coe_osc.e, 2), 1.5) + ar3 * cos(2.0 * u)) * 3.0 * pow(sin(coe_osc.i), 2) / 2.0);
+		coe_mean.a = coe_osc.a - da_sp;
+
+		// No modification on the other elements
+		coe_mean.e = coe_osc.e;
+		coe_mean.g = coe_osc.g;
+		coe_mean.l = coe_osc.l;
+
+		return 0;
+	}
+
+	int ConvertToAEGElements(StateVector sv, const GlobalConstants& cnst, CELEMENTS &coe_osc, CELEMENTS& coe_mean, double& l_dot, double& g_dot, double& h_dot)
+	{
+		coe_osc = CartesianToKeplerian(sv.R, sv.V, cnst.mu);
+		if (KwokMeanElements(coe_osc, cnst, coe_mean)) return 1;
+		BrouwerSecularRates(coe_osc, coe_mean, cnst, l_dot, g_dot, h_dot);
+
+		return 0;
+	}
+
+	void OPS3_ORB_ALT_TSK(VECTOR3 R, VECTOR3 V, const GlobalConstants& cnst, double& HA, double& HP)
+	{
+		VECTOR3 R_UNIT;
+		double RMAG, RDOT, AM, P, K, MM, NN, NU, M, N, E, DELTA;
+
+		RMAG = length(R);
+		R_UNIT = R / RMAG;
+		RDOT = dotp(V, R_UNIT);
+		AM = cnst.mu * RMAG / (2.0 * cnst.mu - RMAG * dotp(V, V));
+		P = RMAG * (2.0 - RMAG / AM - RMAG * RDOT * RDOT / cnst.mu);
+		K = cnst.J2 * pow(cnst.R_E_equ, 2) / (4.0 * P);
+		MM = dotp(_V(0, 0, 1), R_UNIT);
+		NN = dotp(unit(V - R_UNIT * RDOT), _V(0, 0, 1));
+		AM = AM - (cnst.J2 * pow(cnst.R_E_equ, 2) * pow(AM, 2) / pow(RMAG, 3)) * (1.0 - 3.0 * pow(MM, 2));
+		NU = AM * sqrt(AM / cnst.mu);
+		RMAG = RMAG + K * (pow(MM, 2) - pow(NN, 2));
+		RDOT = RDOT + 4.0 * K * MM * NN / NU;
+		AM = AM - K * (2.0 - 3.0 * (pow(MM, 2) + pow(NN, 2)));
+
+		M = RMAG * RDOT / sqrt(cnst.mu * AM);
+		N = 1.0 - RMAG / AM;
+		E = sqrt(pow(M, 2) + pow(N, 2));
+
+		if (2.0 * AM * E < 5.0 * OrbMech::NM)
+		{
+			M = 0.0;
+			N = 1.0;
+		}
+		else
+		{
+			M = sqrt(1.0 - pow(E, 2)) * M / (E * (1.0 - N));
+			N = (N - pow(E, 2)) / (E * (1.0 - N));
+		}
+		DELTA = K * ((pow(MM, 2) - pow(NN, 2)) * (pow(M, 2) - pow(N, 2)) + 4.0 * M * MM * N * NN) - cnst.R_E_equ;
+		HA = (AM * (1.0 + E) + DELTA);
+		HP = (AM * (1.0 - E) + DELTA);
 	}
 
 	double normalize_angle(const double value, const double start, const double end)

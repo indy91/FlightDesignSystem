@@ -143,6 +143,7 @@
     <ClInclude Include="OrbitalManeuverProcessor.h" />
     <ClInclude Include="OrbMech.h" />
     <ClInclude Include="SGP4\SGP4.h" />
+    <ClInclude Include="ShuttleLaunchWindowProcessor.h" />
     <ClInclude Include="SkylabLaunchWindowProcessor.h" />
     <ClInclude Include="VectorMath.h" />
   </ItemGroup>
@@ -155,6 +156,7 @@
     <ClCompile Include="OrbitalManeuverProcessor.cpp" />
     <ClCompile Include="OrbMech.cpp" />
     <ClCompile Include="SGP4\SGP4.cpp" />
+    <ClCompile Include="ShuttleLaunchWindowProcessor.cpp" />
     <ClCompile Include="SkylabLaunchWindowProcessor.cpp" />
   </ItemGroup>
   <ItemGroup>

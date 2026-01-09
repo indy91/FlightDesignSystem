@@ -21,6 +21,7 @@ program. If not, see <https://www.gnu.org/licenses/>.
 #include "OrbitalManeuverProcessor.h"
 #include "LaunchWindowProcessor.h"
 #include "SkylabLaunchWindowProcessor.h"
+#include "ShuttleLaunchWindowProcessor.h"
 
 class Core
 {
@@ -35,25 +36,32 @@ public:
 	int LWPExportForLVDC();
 	int LWPExportForSSV();
 
+	// Shuttle LWP
+	int RunShuttleLWP(bool IsLW, std::string strInputs[], double *dInputs, int *iInputs, std::vector<std::string>& data);
+	int ShuttleLTPExport();
+	int SaveShuttleLWPStateVector(std::string filename);
+
 	bool RunOMP(std::string inputs[], std::string &errormessage, std::vector<std::vector<std::string>>& data);
 
 	int RunSkylabLWP(std::string inputs[], std::vector<std::vector<std::string>>& data);
 
 	int AgeOfStateVector(std::string inputs[], double& age) const;
-	int CalculateDayOfYear(int Year, int Month, int Day, int& DOY) const;
 
 	// OMP
 	int ReadMCTFile(std::string file, std::vector<OMP::ManeuverConstraintsInput> &MCT) const;
 
 	OrbMech::SessionConstants* GetSessionConstants() {return &sescnst;}
 
+	bool IsInitialized() const;
 	double GetLWP_GMTLO() const;
+	int GetDayOfYear() const;
 protected:
 
 	//General
 	int SetGlobalConstants(int world);
 	int SetSessionConstants(int Year, int Month, int Day);
 	void SetLaunchTime(int H, int M, double S);
+	MATRIX3 TEG_to_EF_Matrix(double gmt) const;
 
 	//OMP
 	int ReadMCTLine(std::string line, std::vector<OMP::ManeuverConstraintsInput>& MCT) const;
@@ -71,6 +79,9 @@ protected:
 	//LWP
 	OrbMech::StateVector PVTABC, PVTABT;
 	LWP::LWPSummaryTable LWPSummaryTable;
+
+	// Shuttle LWP
+	ShuttleLWP::ShuttleLTPOutputs LTP_Outputs;
 
 	OrbMech::GlobalConstants globcnst;
 	OrbMech::SessionConstants sescnst;

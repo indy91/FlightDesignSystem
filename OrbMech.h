@@ -229,7 +229,10 @@ namespace OrbMech
 
 	void ITER(double& c, int& s, double e, double& p, double& x, double& eo, double& xo, double dx0 = 1.0);
 	void PIFAAP(double a, double e, double i, double f, double u, double r, double R_E, double J2, double& r_A, double& r_P);
-	void SecularRates(StateVector sv, CELEMENTS coe, const GlobalConstants& cnst, double& ldot, double& gdot);
+	void BrouwerSecularRates(CELEMENTS coe_osc, CELEMENTS coe_mean, const GlobalConstants& cnst, double& l_dot, double& g_dot, double& h_dot);
+	int KwokMeanElements(CELEMENTS coe_osc, const GlobalConstants& cnst, CELEMENTS& coe_mean);
+	int ConvertToAEGElements(StateVector sv, const GlobalConstants& cnst, CELEMENTS &coe_osc, CELEMENTS& coe_mean, double& l_dot, double& g_dot, double& h_dot);
+	void OPS3_ORB_ALT_TSK(VECTOR3 R, VECTOR3 V, const GlobalConstants& cnst, double& HA, double& HP);
 
 	double normalize_angle(const double value, const double start, const double end);
 

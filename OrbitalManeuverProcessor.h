@@ -160,6 +160,8 @@ namespace OMP
 		bool PRINT = true;
 		//Write output plot
 		bool PLOT = false;
+		// Write debug output
+		bool DEBUG = false;
 	};
 
 	struct OMPOutputs
@@ -168,6 +170,7 @@ namespace OMP
 		int Error;
 		std::string ErrorMessage;
 		std::vector<std::vector<std::string>> OutputPrint;
+		std::vector<std::string> DebugOutput;
 	};
 
 	struct OMPVariablesTable
@@ -298,6 +301,12 @@ namespace OMP
 		//Table of maneuver definitions for generating the evaluation table
 		std::vector<MANEUVER> ManeuverTable;
 		std::vector<std::vector<std::string>> OutputPrint;
+		// Write debug output
+		bool DEBUG;
+		// Debug data
+		std::vector<std::string> DebugOutput;
+		// Char buffer
+		char Buffer[256];
 
 		// OUTPUTS
 		MANEVALTABLE ManeuverEvaluationTable;

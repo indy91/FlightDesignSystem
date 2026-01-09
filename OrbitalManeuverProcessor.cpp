@@ -224,6 +224,7 @@ OrbitalManeuverProcessor::OrbitalManeuverProcessor(OrbMech::GlobalConstants& cns
 	TAB = 0U;
 	CurMan = 0;
 	recycle = false;
+	DEBUG = false;
 }
 
 void OrbitalManeuverProcessor::Init(const OMPInputs& in)
@@ -235,6 +236,7 @@ void OrbitalManeuverProcessor::Init(const OMPInputs& in)
 	OMPChaserFile = in.OMPChaserFile;
 	OMPTargetFile = in.OMPTargetFile;
 	OMPMCTFile = in.OMPMCTFile;
+	DEBUG = in.DEBUG;
 
 	Error = 0;
 	recycle = false;
@@ -248,6 +250,7 @@ void OrbitalManeuverProcessor::Init(const OMPInputs& in)
 	ManeuverData.resize(TAB);
 
 	OutputPrint.clear();
+	DebugOutput.clear();
 }
 
 bool OrbitalManeuverProcessor::ParseManeuverConstraintsTable(const std::vector<ManeuverConstraintsInput> &tab_in, std::vector <ManeuverConstraints>& tab_out, std::string& errormessage)
@@ -332,6 +335,7 @@ void OrbitalManeuverProcessor::Calculate(const OMPInputs& in, OMPOutputs &out)
 	out.Error = Error;
 	out.ErrorMessage = Buffer;
 	out.OutputPrint = OutputPrint;
+	out.DebugOutput = DebugOutput;
 }
 
 int OrbitalManeuverProcessor::CalculateOMPPlan(const OMPInputs& in)
@@ -1111,6 +1115,13 @@ int OrbitalManeuverProcessor::RunIterators()
 					iterstate[l].dv = ManeuverData[iterators[l].man].dv_table.x;
 					OrbMech::ITER(iterstate[l].c_I, iterstate[l].s_F, iterstate[l].err, iterstate[l].p_H, iterstate[l].dv, iterstate[l].erro, iterstate[l].dvo);
 
+					if (DEBUG)
+					{
+						sprintf_s(Buffer, "NC iterator: maneuver %d, iteration %d, old DV %.1lf ft/s, new DV %.1lf ft/s",
+							CurMan + 1, (int)(iterstate[l].c_I), iterstate[l].dvo / 0.3048, iterstate[l].dv / 0.3048);
+						DebugOutput.push_back(Buffer);
+					}
+
 					if (iterstate[l].s_F) return 20;	//Error 20: Too many iterations
 
 					ManeuverData[iterators[l].man].dv_table.x = iterstate[l].dv;
@@ -1145,6 +1156,13 @@ int OrbitalManeuverProcessor::RunIterators()
 					iterstate[l].converged = false;
 					iterstate[l].dv = ManeuverData[iterators[l].man].dv_table.x;
 					OrbMech::ITER(iterstate[l].c_I, iterstate[l].s_F, iterstate[l].err, iterstate[l].p_H, iterstate[l].dv, iterstate[l].erro, iterstate[l].dvo);
+
+					if (DEBUG)
+					{
+						sprintf_s(Buffer, "NH iterator: maneuver %d, iteration %d, old DV %.1lf ft/s, new DV %.1lf ft/s",
+							CurMan + 1, (int)(iterstate[l].c_I), iterstate[l].dvo / 0.3048, iterstate[l].dv / 0.3048);
+						DebugOutput.push_back(Buffer);
+					}
 
 					if (iterstate[l].s_F) return 20;	//Error 20: Too many iterations
 
@@ -1433,16 +1451,26 @@ int OrbitalManeuverProcessor::ApplyManeuver()
 		}
 	}
 
-	//Calculate SV after the maneuver
+	// Calculate SV after the maneuver
 	if (ManeuverData[CurMan].ChaserMan)
 	{
 		ManeuverData[CurMan].sv_A_aft_table = ApplyLVLHManeuver(ManeuverData[CurMan].sv_A_bef_table, ManeuverData[CurMan].dv_table, ManeuverData[CurMan].ThrustProfile);
 		ManeuverData[CurMan].sv_P_aft_table = ManeuverData[CurMan].sv_P_bef_table;
+		sv_maneuver = ManeuverData[CurMan].sv_A_aft_table;
 	}
 	else
 	{
 		ManeuverData[CurMan].sv_P_aft_table = ApplyLVLHManeuver(ManeuverData[CurMan].sv_P_bef_table, ManeuverData[CurMan].dv_table, ManeuverData[CurMan].ThrustProfile);
 		ManeuverData[CurMan].sv_A_aft_table = ManeuverData[CurMan].sv_A_bef_table;
+		sv_maneuver = ManeuverData[CurMan].sv_P_aft_table;
+	}
+
+	// Error checks
+	double a_test = OrbMech::GetSemiMajorAxis(sv_maneuver.R, sv_maneuver.V, constants.mu);
+	if (a_test <= 0.0)
+	{
+		// Error: Trajectory became hyperbolic
+		return 1003;
 	}
 
 	return 0;
@@ -1545,13 +1573,15 @@ void OrbitalManeuverProcessor::CalculateManeuverEvalTable(OrbMech::StateVector s
 
 		if (Sunrise(sv_cur, true, true, sv_temp))
 		{
-			return;
+			sv_temp = sv_cur;
+			// TBD: Set some kind of error condition
 		}
 		dt1 = sv_temp.GMT - sv_cur.GMT;
 
 		if (Sunrise(sv_cur, false, true, sv_temp))
 		{
-			return;
+			sv_temp = sv_cur;
+			// TBD: Set some kind of error condition
 		}
 		dt2 = sv_temp.GMT - sv_cur.GMT;
 
@@ -1568,13 +1598,15 @@ void OrbitalManeuverProcessor::CalculateManeuverEvalTable(OrbMech::StateVector s
 
 		if (Sunrise(sv_cur, true, false, sv_temp))
 		{
-			return;
+			sv_temp = sv_cur;
+			// TBD: Set some kind of error condition
 		}
 		dt1 = sv_temp.GMT - sv_cur.GMT;
 
 		if (Sunrise(sv_cur, false, false, sv_temp))
 		{
-			return;
+			sv_temp = sv_cur;
+			// TBD: Set some kind of error condition
 		}
 		dt2 = sv_temp.GMT - sv_cur.GMT;
 
@@ -1696,21 +1728,14 @@ int OrbitalManeuverProcessor::GeneralTrajectoryPropagation(OrbMech::StateVector 
 	}
 	else
 	{
-		OrbMech::CELEMENTS osc0, osc1;
-		double DX_L, X_L, X_L_dot, dt, ddt, L_D, ll_dot, n0, g_dot;
+		OrbMech::CELEMENTS osc0, mean0, osc1;
+		double DX_L, X_L, X_L_dot, dt, ddt, L_D, ll_dot, g_dot, h_dot;
 		int LINE, COUNT;
 		bool DH;
 
 		sv1 = sv0;
-		osc0 = OrbMech::CartesianToKeplerian(sv0.R, sv0.V, constants.mu);
 
-		n0 = sqrt(constants.mu / (osc0.a * osc0.a * osc0.a));
-		ll_dot = n0;// OrbMech::PI2 / OrbMech::REVTIM(sv0.R, sv0.V, constants);
-
-		double J20 = 1082.6269e-6;
-		g_dot = n0 * ((3.0 / 4.0) * (J20 * constants.R_E * constants.R_E * (5.0 * cos(osc0.i) * cos(osc0.i) - 1.0)) / (osc0.a * osc0.a * pow(1.0 - osc0.e * osc0.e, 2.0)));
-
-		//OrbMech::SecularRates(sv0, osc0, constants, ll_dot, g_dot);
+		OrbMech::ConvertToAEGElements(sv0, constants, osc0, mean0, ll_dot, g_dot, h_dot);
 
 		osc1 = osc0;
 		if (opt != 3)
@@ -2190,7 +2215,14 @@ int OrbitalManeuverProcessor::Sunrise(OrbMech::StateVector sv0, bool rise, bool 
 		}
 		cos_phi1 = dotp(unit(sv.R), N);
 		phi1 = acos(cos_phi1);
-		sin_alpha = sqrt(1.0 - pow(R_e / r, 2));
+
+		sin_alpha = 1.0 - pow(R_e / r, 2);
+		if (sin_alpha < 0.0)
+		{
+			//Orbit is subsurface
+			return 1;
+		}
+		sin_alpha = sqrt(sin_alpha);
 		cos_eta = dotp(H, R_S);
 		sin_eta = sqrt(1.0 - cos_eta * cos_eta);
 		if (sin_eta <= sin_alpha)
@@ -2650,6 +2682,7 @@ void OrbitalManeuverProcessor::GetOMPError(int err, std::string &buf, unsigned i
 	case 101:	buf = "Error: Time theta error.";								break;
 	case 1001:	buf = "Error: Trajectory became reentrant.";					break;
 	case 1002:	buf = "Error: Kepler error in integrator.";						break;
+	case 1003:	buf = "Error: Trajectory became hyperbolic.";					break;
 	case 2001:	buf = "Error parsing MCT, maneuver name of maneuver " + std::to_string(i + 1) + " too long";	break;
 	case 2002:	buf = "Error parsing MCT, maneuver type of maneuver " + std::to_string(i + 1) + " illegal";		break;
 	case 2003:	buf = "Error parsing MCT, threshold type of maneuver " + std::to_string(i + 1) + " illegal";	break;

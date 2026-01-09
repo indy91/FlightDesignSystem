@@ -26,6 +26,7 @@ program. If not, see <https://www.gnu.org/licenses/>.
 #include <wx/fileconf.h>
 #include "wx/dir.h"
 #include <wx/tokenzr.h>
+#include "wx/statline.h"
 
 enum
 {
@@ -51,7 +52,13 @@ enum
     ID_Button_LWP_SSV_Export,
     ID_Button_MCT_View,
     ID_Button_MCT_Save,
-    ID_Button_FDOMFD_Export
+    ID_Button_FDOMFD_Export,
+    wxID_comboShuttleLWP_Launchpad,
+    ID_Button_Shuttle_LWP_Execute,
+    ID_Button_Shuttle_LTP_Execute,
+    ID_World,
+    ID_Button_ShuttleLWP_Export,
+    ID_Button_ShuttleLWP_SaveStateVector
 };
 
 BEGIN_EVENT_TABLE(FDSFrame, wxFrame)
@@ -71,11 +78,17 @@ EVT_BUTTON(ID_Button_SV_New, FDSFrame::OnButton_StateVector_New)
 EVT_TEXT(ID_TextBox_Year, FDSFrame::CalculateDayOfYear)
 EVT_TEXT(ID_TextBox_Month, FDSFrame::CalculateDayOfYear)
 EVT_TEXT(ID_TextBox_Day, FDSFrame::CalculateDayOfYear)
+EVT_CHOICE(ID_World, FDSFrame::CalculateDayOfYear)
 EVT_BUTTON(ID_Button_LWP_LVDC_Export, FDSFrame::OnButton_LWP_LVDC_Export)
 EVT_BUTTON(ID_Button_LWP_SSV_Export, FDSFrame::OnButton_LWP_SSV_Export)
 EVT_BUTTON(ID_Button_MCT_View, FDSFrame::OnButton_View_MCT)
 EVT_BUTTON(ID_Button_MCT_Save, FDSFrame::OnButton_Save_MCT)
 EVT_BUTTON(ID_Button_FDOMFD_Export, FDSFrame::OnButton_FDOMFD_Export)
+EVT_CHOICE(wxID_comboShuttleLWP_Launchpad, FDSFrame::OnCombo_ShuttleLWP_Launchpad)
+EVT_BUTTON(ID_Button_Shuttle_LWP_Execute, FDSFrame::OnButton_ShuttleLWP_LWP_Execute)
+EVT_BUTTON(ID_Button_Shuttle_LTP_Execute, FDSFrame::OnButton_ShuttleLWP_LTP_Execute)
+EVT_BUTTON(ID_Button_ShuttleLWP_Export, FDSFrame::OnButton_ShuttleLWP_Export)
+EVT_BUTTON(ID_Button_ShuttleLWP_SaveStateVector, FDSFrame::OnButtonShuttleLWPSaveStateVector)
 END_EVENT_TABLE()
 
 bool MyApp::OnInit()
@@ -94,18 +107,22 @@ FDSFrame::FDSFrame(const wxString& title)
     wxPanel* panel = new wxPanel(this, wxID_ANY);
 
     // Create the wxNotebook widget
-    wxNotebook* notebook = new wxNotebook(panel, MainContentID);
+    notebook = new wxNotebook(panel, MainContentID);
 
-    // Add 2 pages to the wxNotebook widget
+    // Add pages to the wxNotebook widget
     panel1 = new wxPanel(notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, 2621440L, L"Tab 1 Contents");
-    notebook->AddPage(panel1, L"Config");
     panel2 = new wxPanel(notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, 2621440L, L"Tab 2 Contents");
-    notebook->AddPage(panel2, L"Generic LWP");
+    nb_ShuttleLWP = new wxNotebook(notebook, wxID_ANY);
+    AddShuttleLWPPage();
     panel3 = new wxPanel(notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, 2621440L, L"Tab 3 Contents");
+    panel4 = new wxPanel(notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, 2621440L, L"Skylab LWP Contents");
+    panel5 = new wxPanel(notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, 2621440L, L"SV Contents");
+
+    notebook->AddPage(panel1, L"Config");
+    notebook->AddPage(panel2, L"Generic LWP");
+    notebook->AddPage(nb_ShuttleLWP, L"Shuttle LWP");
     notebook->AddPage(panel3, L"OMP");
-    panel4 = new wxPanel(notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, 2621440L, L"Tab 4 Contents");
     notebook->AddPage(panel4, L"Skylab LWP");
-    panel5 = new wxPanel(notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, 2621440L, L"Tab 4 Contents");
     notebook->AddPage(panel5, L"State Vectors");
 
     // Set up the sizer for the panel
@@ -129,6 +146,9 @@ FDSFrame::FDSFrame(const wxString& title)
     AddOMPPage();   
     AddSkylabLWPPage();
     AddStateVectorPage();
+
+    // Initialize with default inputs
+    SetConstants();
 }
 
 FDSFrame::~FDSFrame()
@@ -171,29 +191,30 @@ void FDSFrame::AddConfigPage()
     new wxStaticText(panel1, wxID_ANY, "World", wxPoint(minX, Y + difftext));
     strings.Add(wxT("NASSP"));
     strings.Add(wxT("SSV"));
-    comboWorld = new wxComboBox(panel1, wxID_ANY, wxT("NASSP"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboWorld = new wxChoice(panel1, ID_World, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/Config/World");
     comboWorld->SetToolTip(wxT("Select world"));
+    comboWorld->SetSelection(0);
     strings.clear();
     Y += diffY;
 
     new wxStaticText(panel1, wxID_ANY, "Year", wxPoint(minX, Y + difftext));
-    textYear = new wxTextCtrl(panel1, ID_TextBox_Year, "1973", wxPoint(minX + diffX, Y));
+    Add(textYear = new wxTextCtrl(panel1, ID_TextBox_Year, "1973", wxPoint(minX + diffX, Y)), "/Config/Year");
     textYear->SetToolTip(wxT("Liftoff year"));
     Y += diffY;
 
     new wxStaticText(panel1, wxID_ANY, "Month", wxPoint(minX, Y + difftext));
-    textMonth = new wxTextCtrl(panel1, ID_TextBox_Month, "5", wxPoint(minX + diffX, Y));
+    Add(textMonth = new wxTextCtrl(panel1, ID_TextBox_Month, "5", wxPoint(minX + diffX, Y)), "/Config/Month");
     textMonth->SetToolTip(wxT("Liftoff month"));
     Y += diffY;
 
     new wxStaticText(panel1, wxID_ANY, "Day", wxPoint(minX, Y + difftext));
-    textDay = new wxTextCtrl(panel1, ID_TextBox_Day, "15", wxPoint(minX + diffX, Y));
+    Add(textDay = new wxTextCtrl(panel1, ID_TextBox_Day, "15", wxPoint(minX + diffX, Y)), "/Config/Day");
     textDay->SetToolTip(wxT("Liftoff day"));
     Y += diffY;
     Y += diffY;
 
     new wxStaticText(panel1, wxID_ANY, "DOY", wxPoint(minX, Y + difftext));
-    textDayOfYear = new wxTextCtrl(panel1, wxID_ANY, wxEmptyString, wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    Add(textDayOfYear = new wxTextCtrl(panel1, wxID_ANY, wxEmptyString, wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY), "/Config/DOY");
     textDayOfYear->SetToolTip(wxT("Day of year"));
     Y += diffY;
 }
@@ -214,23 +235,23 @@ void FDSFrame::AddLWPPage()
     Y = minY;
 
     new wxStaticText(panel2, wxID_ANY, "TRGVEC", wxPoint(minX, Y + difftext));
-    textLWPTargetVector = new wxTextCtrl(panel2, wxID_ANY, "Skylab TLE2.txt", wxPoint(minX + diffX, Y));
+    Add(textLWPTargetVector = new wxTextCtrl(panel2, wxID_ANY, "Skylab TLE2.txt", wxPoint(minX + diffX, Y)), "/LWP/TargetVector");
     textLWPTargetVector->SetToolTip(wxT("Target vehicle state vector"));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "CKFACTOR", wxPoint(minX, Y + difftext));
-    textLWPCKFactor = new wxTextCtrl(panel2, wxID_ANY, "1.0", wxPoint(minX + diffX, Y));
+    Add(textLWPCKFactor = new wxTextCtrl(panel2, wxID_ANY, "1.0", wxPoint(minX + diffX, Y)), "/LWP/CKFactor");
     textLWPCKFactor->SetToolTip(wxT("Chaser vehicle drag multiplier"));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "CAREA", wxPoint(minX, Y + difftext));
-    textLWPCArea = new wxTextCtrl(panel2, wxID_ANY, "129.4", wxPoint(minX + diffX, Y));
+    Add(textLWPCArea = new wxTextCtrl(panel2, wxID_ANY, "129.4", wxPoint(minX + diffX, Y)), "/LWP/CArea");
     textLWPCArea->SetToolTip(wxT("Chaser vehicle reference area"));
     new wxStaticText(panel2, wxID_ANY, "sq ft", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "CWHT", wxPoint(minX, Y + difftext));
-    textLWPCWHT = new wxTextCtrl(panel2, wxID_ANY, "300000.0", wxPoint(minX + diffX, Y));
+    Add(textLWPCWHT = new wxTextCtrl(panel2, wxID_ANY, "300000.0", wxPoint(minX + diffX, Y)), "LWP/CWHT");
     textLWPCWHT->SetToolTip(wxT("Chaser vehicle weight at insertion"));
     new wxStaticText(panel2, wxID_ANY, "lbs", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -240,8 +261,9 @@ void FDSFrame::AddLWPPage()
     strings.Add(wxT("Launch Window"));
     strings.Add(wxT("Launch Targeting"));
     strings.Add(wxT("Both"));
-    comboLWPLW = new wxComboBox(panel2, wxID_ANY, wxT("Both"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboLWPLW = new wxChoice(panel2, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/LWP/LW");
     comboLWPLW->SetToolTip(wxT("Launch window/launch targeting options"));
+    comboLWPLW->SetSelection(2);
     strings.clear();
     Y += diffY;
 
@@ -249,13 +271,14 @@ void FDSFrame::AddLWPPage()
     strings.Add(wxT("North"));
     strings.Add(wxT("South"));
     strings.Add(wxT("Both"));
-    comboLWPNS = new wxComboBox(panel2, wxID_ANY, wxT("North"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboLWPNS = new wxChoice(panel2, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/LWP/NS");
     comboLWPNS->SetToolTip(wxT("Inplane launch window opening and closing times option"));
+    comboLWPNS->SetSelection(0);
     strings.clear();
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "DAY", wxPoint(minX, Y + difftext));
-    textLWPDay = new wxTextCtrl(panel2, wxID_ANY, "0", wxPoint(minX + diffX, Y));
+    Add(textLWPDay = new wxTextCtrl(panel2, wxID_ANY, "0", wxPoint(minX + diffX, Y)), "LWP/LWPDay");
     textLWPDay->SetToolTip(wxT("Day on which launch window times are computed, relative to base date"));
     Y += diffY;
 
@@ -265,25 +288,26 @@ void FDSFrame::AddLWPPage()
     strings.Add(wxT("Around closing"));
     strings.Add(wxT("Around both"));
     strings.Add(wxT("Entire window"));
-    comboLWP_LPT = new wxComboBox(panel2, wxID_ANY, wxT("Do not generate table"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboLWP_LPT = new wxChoice(panel2, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/LWP/LPT");
     comboLWP_LPT->SetToolTip(wxT("Launch window parameter table options"));
+    comboLWP_LPT->SetSelection(0);
     strings.clear();
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "TSTART", wxPoint(minX, Y + difftext));
-    textLWP_TSTART = new wxTextCtrl(panel2, wxID_ANY, "300.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_TSTART = new wxTextCtrl(panel2, wxID_ANY, "300.0", wxPoint(minX + diffX, Y)), "/LWP/TSTART");
     textLWP_TSTART->SetToolTip(wxT("Delta time prior to inplane time to start parameter table"));
     new wxStaticText(panel2, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "TEND", wxPoint(minX, Y + difftext));
-    textLWP_TEND = new wxTextCtrl(panel2, wxID_ANY, "300.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_TEND = new wxTextCtrl(panel2, wxID_ANY, "300.0", wxPoint(minX + diffX, Y)), "/LWP/TEND");
     textLWP_TEND->SetToolTip(wxT("Delta time after inplane time to start parameter table"));
     new wxStaticText(panel2, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "TSTEP", wxPoint(minX, Y + difftext));
-    textLWP_TSTEP = new wxTextCtrl(panel2, wxID_ANY, "300.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_TSTEP = new wxTextCtrl(panel2, wxID_ANY, "300.0", wxPoint(minX + diffX, Y)), "/LWP/TSTEP");
     textLWP_TSTEP->SetToolTip(wxT("Time step in parameter table"));
     new wxStaticText(panel2, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -291,19 +315,20 @@ void FDSFrame::AddLWPPage()
     new wxStaticText(panel2, wxID_ANY, "STABLE", wxPoint(minX, Y + difftext));
     strings.Add(wxT("Do not compute table"));
     strings.Add(wxT("Compute table"));
-    comboLWP_STABLE = new wxComboBox(panel2, wxID_ANY, wxT("Do not compute table"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboLWP_STABLE = new wxChoice(panel2, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/LWP/STABLE");
     comboLWP_STABLE->SetToolTip(wxT("GMTLO* table flag"));
+    comboLWP_STABLE->SetSelection(0);
     strings.clear();
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "STARS", wxPoint(minX, Y + difftext));
-    textLWP_STARS = new wxTextCtrl(panel2, wxID_ANY, "300.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_STARS = new wxTextCtrl(panel2, wxID_ANY, "300.0", wxPoint(minX + diffX, Y)), "/LWP/STARS");
     textLWP_STARS->SetToolTip(wxT("Delta time prior to each inplane launch point to start GMTLO* search"));
     new wxStaticText(panel2, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "STARE", wxPoint(minX, Y + difftext));
-    textLWP_STARE = new wxTextCtrl(panel2, wxID_ANY, "300.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_STARE = new wxTextCtrl(panel2, wxID_ANY, "300.0", wxPoint(minX + diffX, Y)), "/LWP/STARE");
     textLWP_STARE->SetToolTip(wxT("Delta time after each inplane launch point to start GMTLO* search"));
     new wxStaticText(panel2, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -312,61 +337,61 @@ void FDSFrame::AddLWPPage()
     Y = minY;
 
     new wxStaticText(panel2, wxID_ANY, "LATLS", wxPoint(minX, Y + difftext));
-    textLWP_LATLS = new wxTextCtrl(panel2, wxID_ANY, "28.627", wxPoint(minX + diffX, Y));
+    Add(textLWP_LATLS = new wxTextCtrl(panel2, wxID_ANY, "28.627", wxPoint(minX + diffX, Y)), "/LWP/LATLS");
     textLWP_LATLS->SetToolTip(wxT("Geocentric latitude of launch site"));
     new wxStaticText(panel2, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "LONGLS", wxPoint(minX, Y + difftext));
-    textLWP_LONGLS = new wxTextCtrl(panel2, wxID_ANY, "279.379", wxPoint(minX + diffX, Y));
+    Add(textLWP_LONGLS = new wxTextCtrl(panel2, wxID_ANY, "279.379", wxPoint(minX + diffX, Y)), "/LWP/LONGLS");
     textLWP_LONGLS->SetToolTip(wxT("Geographic longitude of launch site"));
     new wxStaticText(panel2, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "PFT", wxPoint(minX, Y + difftext));
-    textLWP_PFT = new wxTextCtrl(panel2, wxID_ANY, "519.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_PFT = new wxTextCtrl(panel2, wxID_ANY, "519.0", wxPoint(minX + diffX, Y)), "/LWP/PFT");
     textLWP_PFT->SetToolTip(wxT("Powered flight time"));
     new wxStaticText(panel2, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "PFA", wxPoint(minX, Y + difftext));
-    textLWP_PFA = new wxTextCtrl(panel2, wxID_ANY, "14.4", wxPoint(minX + diffX, Y));
+    Add(textLWP_PFA = new wxTextCtrl(panel2, wxID_ANY, "14.4", wxPoint(minX + diffX, Y)), "/LWP/PFA");
     textLWP_PFA->SetToolTip(wxT("Powered flight arc"));
     new wxStaticText(panel2, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "YSMAX", wxPoint(minX, Y + difftext));
-    textLWP_YSMAX = new wxTextCtrl(panel2, wxID_ANY, "14.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_YSMAX = new wxTextCtrl(panel2, wxID_ANY, "14.0", wxPoint(minX + diffX, Y)), "/LWP/YSMAX");
     textLWP_YSMAX->SetToolTip(wxT("Yaw steering limit"));
     new wxStaticText(panel2, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "DTOPT", wxPoint(minX, Y + difftext));
-    textLWP_DTOPT = new wxTextCtrl(panel2, wxID_ANY, "360.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_DTOPT = new wxTextCtrl(panel2, wxID_ANY, "360.0", wxPoint(minX + diffX, Y)), "/LWP/DTOPT");
     textLWP_DTOPT->SetToolTip(wxT("Delta time to be subtracted from analytical inplane launch time to obtain empirical launch time"));
     new wxStaticText(panel2, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "DTGRR", wxPoint(minX, Y + difftext));
-    textLWP_DTGRR = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_DTGRR = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y)), "/LWP/DTGRR");
     textLWP_DTGRR->SetToolTip(wxT("DT from lift-off, which defines the time of guidance reference release"));
     new wxStaticText(panel2, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "RINS", wxPoint(minX, Y + difftext));
-    textLWP_RINS = new wxTextCtrl(panel2, wxID_ANY, "21417907.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_RINS = new wxTextCtrl(panel2, wxID_ANY, "21417907.0", wxPoint(minX + diffX, Y)), "/LWP/RINS");
     textLWP_RINS->SetToolTip(wxT("Radius of insertion"));
     new wxStaticText(panel2, wxID_ANY, "ft", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "VINS", wxPoint(minX, Y + difftext));
-    textLWP_VINS = new wxTextCtrl(panel2, wxID_ANY, "25705.8", wxPoint(minX + diffX, Y));
+    Add(textLWP_VINS = new wxTextCtrl(panel2, wxID_ANY, "25705.8", wxPoint(minX + diffX, Y)), "/LWP/VINS");
     textLWP_VINS->SetToolTip(wxT("Velocity of insertion"));
     new wxStaticText(panel2, wxID_ANY, "ft/s", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "GAMINS", wxPoint(minX, Y + difftext));
-    textLWP_GAMINS = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_GAMINS = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y)), "/LWP/GAMINS");
     textLWP_GAMINS->SetToolTip(wxT("Flightpath angle of insertion"));
     new wxStaticText(panel2, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -381,37 +406,38 @@ void FDSFrame::AddLWPPage()
     strings.Add(wxT("Time from zero phase (TPLANE)"));
     strings.Add(wxT("Inplane time"));
     strings.Add(wxT("Zero yaw steering time"));
-    comboLWP_LOT = new wxComboBox(panel2, wxID_ANY, wxT("Zero yaw steering time"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboLWP_LOT = new wxChoice(panel2, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/LWP/LOT");
     comboLWP_LOT->SetToolTip(wxT("Lift-off time options for launch targeting"));
+    comboLWP_LOT->SetSelection(5);
     strings.clear();
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "GMTLOR", wxPoint(minX, Y + difftext));
-    textLWP_GMTLOR = new wxTextCtrl(panel2, wxID_ANY, "00:00:00.000", wxPoint(minX + diffX, Y));
+    Add(textLWP_GMTLOR = new wxTextCtrl(panel2, wxID_ANY, "00:00:00.000", wxPoint(minX + diffX, Y)), "/LWP/GMTLOR");
     textLWP_GMTLOR->SetToolTip(wxT("Recommended or threshold lift-off time"));
     new wxStaticText(panel2, wxID_ANY, "GMT", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "OFFSET", wxPoint(minX, Y + difftext));
-    textLWP_OFFSET = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_OFFSET = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y)), "/LWP/OFFSET");
     textLWP_OFFSET->SetToolTip(wxT("Phase angle desired at insertion"));
     new wxStaticText(panel2, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "BIAS", wxPoint(minX, Y + difftext));
-    textLWP_BIAS = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_BIAS = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y)), "/LWP/BIAS");
     textLWP_BIAS->SetToolTip(wxT("Delta time added to GMTLO* to produce lift-off time"));
     new wxStaticText(panel2, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "TPLANE", wxPoint(minX, Y + difftext));
-    textLWP_TPLANE = new wxTextCtrl(panel2, wxID_ANY, "00:00:00.000", wxPoint(minX + diffX, Y));
+    Add(textLWP_TPLANE = new wxTextCtrl(panel2, wxID_ANY, "00:00:00.000", wxPoint(minX + diffX, Y)), "/LWP/TPLANE");
     textLWP_TPLANE->SetToolTip(wxT("Greenwich mean time of in-plane lift-off (computed internally if LW is run)"));
     new wxStaticText(panel2, wxID_ANY, "GMT", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "TRANS", wxPoint(minX, Y + difftext));
-    textLWP_TRANS = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_TRANS = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y)), "/LWP/TRANS");
     textLWP_TRANS->SetToolTip(wxT("Delta time added in in-plane time to obtain lift-off time"));
     new wxStaticText(panel2, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -420,25 +446,26 @@ void FDSFrame::AddLWPPage()
     strings.Add(wxT("Input VINS, GAMINS, RINS"));
     strings.Add(wxT("Input GAMINS, RINS and height diff"));
     strings.Add(wxT("Input GAMINS, RINS and altitude"));
-    comboLWP_INSCO = new wxComboBox(panel2, wxID_ANY, wxT("Input VINS, GAMINS, RINS"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboLWP_INSCO = new wxChoice(panel2, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/LWP/INSCO");
     comboLWP_INSCO->SetToolTip(wxT("Insertion cutoff conditions option flag"));
+    comboLWP_INSCO->SetSelection(0);
     strings.clear();
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "DHW", wxPoint(minX, Y + difftext));
-    textLWP_DHW = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_DHW = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y)), "/LWP/DHW");
     textLWP_DHW->SetToolTip(wxT("Desired height difference between chaser and target, or altitude of chaser, at input angle from insertion"));
     new wxStaticText(panel2, wxID_ANY, "NM", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "DU", wxPoint(minX, Y + difftext));
-    textLWP_DU = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_DU = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y)), "/LWP/DU");
     textLWP_DU->SetToolTip(wxT("Angle from insertion to obtain a given altitude, or delta altitude"));
     new wxStaticText(panel2, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "ANOM", wxPoint(minX, Y + difftext));
-    textLWP_ANOM = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_ANOM = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y)), "/LWP/ANOM");
     textLWP_ANOM->SetToolTip(wxT("Nominal semimajor axis at insertion"));
     new wxStaticText(panel2, wxID_ANY, "NM", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -446,13 +473,14 @@ void FDSFrame::AddLWPPage()
     new wxStaticText(panel2, wxID_ANY, "DELNOF", wxPoint(minX, Y + difftext));
     strings.Add(wxT("Input DELNO"));
     strings.Add(wxT("Compute DELNO"));
-    comboLWP_DELNOF = new wxComboBox(panel2, wxID_ANY, wxT("Compute DELNO"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboLWP_DELNOF = new wxChoice(panel2, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/LWP/DELNOF");
     comboLWP_DELNOF->SetToolTip(wxT("Flag for option to compute differential nodal regression from insertion to rendezvous"));
+    comboLWP_DELNOF->SetSelection(1),
     strings.clear();
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "DELNO", wxPoint(minX, Y + difftext));
-    textLWP_DELNO = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    Add(textLWP_DELNO = new wxTextCtrl(panel2, wxID_ANY, "0.0", wxPoint(minX + diffX, Y)), "/LWP/DELNO");
     textLWP_DELNO->SetToolTip(wxT("Angle that is added to the target descending node to account for differential nodal regression"));
     new wxStaticText(panel2, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -461,13 +489,14 @@ void FDSFrame::AddLWPPage()
     strings.Add(wxT("Use positive value"));
     strings.Add(wxT("Use negative value"));
     strings.Add(wxT("Use lowest absolute value"));
-    comboLWP_NEGTIV = new wxComboBox(panel2, wxID_ANY, wxT("Use positive value"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboLWP_NEGTIV = new wxChoice(panel2, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/LWP/NEGTIV");
     comboLWP_NEGTIV->SetToolTip(wxT("Initial phase angle control flag"));
+    comboLWP_NEGTIV->SetSelection(0);
     strings.clear();
     Y += diffY;
 
     new wxStaticText(panel2, wxID_ANY, "WRAP", wxPoint(minX, Y + difftext));
-    textLWP_WRAP = new wxTextCtrl(panel2, wxID_ANY, "0", wxPoint(minX + diffX, Y));
+    Add(textLWP_WRAP = new wxTextCtrl(panel2, wxID_ANY, "0", wxPoint(minX + diffX, Y)), "/LWP/WRAP");
     textLWP_WRAP->SetToolTip(wxT("Flag to wrap initial phase angle"));
     Y += diffY;
 
@@ -494,6 +523,576 @@ void FDSFrame::AddLWPPage()
     new wxButton(panel2, ID_Button_LWP_SSV_Export, wxT("Export SSV"), wxPoint(minX, Y), wxDefaultSize);
 }
 
+void FDSFrame::AddShuttleLWPPage()
+{
+    // Add notebook
+    nb_ShuttleLWP = new wxNotebook(notebook, wxID_ANY);
+
+    // Add pages
+    wxPanel* panel_Init = new wxPanel(nb_ShuttleLWP, wxID_ANY);
+    wxPanel* panel_Constants = new wxPanel(nb_ShuttleLWP, wxID_ANY);
+    wxPanel* panel_LNCH_REF_TGT_SETS = new wxPanel(nb_ShuttleLWP, wxID_ANY);
+    wxPanel* panel_LWP_EXECUTION = new wxPanel(nb_ShuttleLWP, wxID_ANY);
+    wxPanel* panel_LTP_EXECUTION = new wxPanel(nb_ShuttleLWP, wxID_ANY);
+
+    nb_ShuttleLWP->AddPage(panel_Init, L"Launch W/T Init");
+    nb_ShuttleLWP->AddPage(panel_Constants, L"Constants");
+    nb_ShuttleLWP->AddPage(panel_LNCH_REF_TGT_SETS, "LNCH REF TGT SETS");
+    nb_ShuttleLWP->AddPage(panel_LWP_EXECUTION, "LWP EXECUTION");
+    nb_ShuttleLWP->AddPage(panel_LTP_EXECUTION, "LTP EXECUTION");
+
+    wxArrayString strings;
+    int minX, minY, diffX, diffY, counter, difftext, Y, diffunit;
+
+    minX = 10;
+    minY = 10;
+    diffX = 70;
+    diffY = 26;// 32;
+    counter = 0;
+    difftext = 4;
+    diffunit = 200;
+
+    Y = minY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "TRGVEC", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWPTargetVector = new wxTextCtrl(panel_Init, wxID_ANY, "ISS.txt", wxPoint(minX + diffX, Y)), "/ShuttleLWP/TargetVector");
+    textShuttleLWPTargetVector->SetToolTip(wxT("Target vehicle state vector"));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "YS", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_YSMAX = new wxTextCtrl(panel_Init, wxID_ANY, "14.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/YS");
+    textShuttleLWP_YSMAX->SetToolTip(wxT("Yaw steering limit"));
+    new wxStaticText(panel_Init, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "INSERTION MODE", wxPoint(minX, Y + difftext));
+    Add(checkShuttleLWP_DI = new wxCheckBox(panel_Init, wxID_ANY, "DI", wxPoint(minX + diffX + 50, Y + difftext), wxDefaultSize, wxALIGN_LEFT), "/ShuttleLWP/DI");
+    checkShuttleLWP_DI->SetValue(true);
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "CHASER VEHICLE DATA", wxPoint(minX, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "CD", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_CD = new wxTextCtrl(panel_Init, wxID_ANY, "2.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/CD");
+    textShuttleLWP_CD->SetToolTip("Drag coefficient");
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "AREA", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_Area = new wxTextCtrl(panel_Init, wxID_ANY, "2500.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/AREA");
+    textShuttleLWP_Area->SetToolTip("Vehicle area");
+    new wxStaticText(panel_Init, wxID_ANY, "ft2", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "WEIGHT", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_Weight = new wxTextCtrl(panel_Init, wxID_ANY, "251679", wxPoint(minX + diffX, Y)), "/ShuttleLWP/WEIGHT");
+    textShuttleLWP_Weight->SetToolTip("Vehicle weight");
+    new wxStaticText(panel_Init, wxID_ANY, "lbm", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "LAUNCH SITE", wxPoint(minX, Y + difftext));
+    strings.Add(wxT("LC-39A"));
+    strings.Add(wxT("LC-39B"));
+    strings.Add(wxT("SLC-6"));
+    Add(comboShuttleLWP_Launchpad = new wxChoice(panel_Init, wxID_comboShuttleLWP_Launchpad, wxPoint(minX + diffX + 50, Y), wxDefaultSize, strings), "/ShuttleLWP/Launchpad");
+    comboShuttleLWP_Launchpad->SetToolTip(wxT("Launchpad"));
+    comboShuttleLWP_Launchpad->SetSelection(0);
+    strings.clear();
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "LATLS", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_LATLS = new wxTextCtrl(panel_Init, wxID_ANY, "28.608385", wxPoint(minX + diffX, Y)), "/ShuttleLWP/LATLS");
+    textShuttleLWP_LATLS->SetToolTip(wxT("Geocentric latitude of launch site"));
+    new wxStaticText(panel_Init, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "LONGLS", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_LONGLS = new wxTextCtrl(panel_Init, wxID_ANY, "279.379138", wxPoint(minX + diffX, Y)), "/ShuttleLWP/LONGLS");
+    textShuttleLWP_LONGLS->SetToolTip(wxT("Geographic longitude of launch site"));
+    new wxStaticText(panel_Init, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    minX += 256;
+    Y = minY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "MPS Dump Data", wxPoint(minX + diffX, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_Init, wxID_ANY, "PEG 7", wxPoint(minX + diffX, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "DVX", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_MPS_Dump_DVX = new wxTextCtrl(panel_Init, wxID_ANY, "8.1", wxPoint(minX + diffX, Y)), "/ShuttleLWP/MPS_Dump_DVX");
+    textShuttleLWP_MPS_Dump_DVX->SetToolTip("MPS dump Delta V X in feet per second");
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "DVY", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_MPS_Dump_DVY = new wxTextCtrl(panel_Init, wxID_ANY, "0.5", wxPoint(minX + diffX, Y)), "/ShuttleLWP/MPS_Dump_DVY");
+    textShuttleLWP_MPS_Dump_DVY->SetToolTip("MPS dump Delta V Y in feet per second");
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "DVZ", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_MPS_Dump_DVZ = new wxTextCtrl(panel_Init, wxID_ANY, "1.6", wxPoint(minX + diffX, Y)), "/ShuttleLWP/MPS_Dump_DVZ");
+    textShuttleLWP_MPS_Dump_DVZ->SetToolTip("MPS dump Delta V Z in feet per second");
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "DTIG", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_MPS_Dump_DTIG = new wxTextCtrl(panel_Init, wxID_ANY, "0:00:01:54", wxPoint(minX + diffX, Y)), "/ShuttleLWP/MPS_Dump_DTIG");
+    textShuttleLWP_MPS_Dump_DTIG->SetToolTip("Time from MECO to MPS dump");
+    new wxStaticText(panel_Init, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "ET DATA", wxPoint(minX + diffX, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "AREA", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_ET_Area = new wxTextCtrl(panel_Init, wxID_ANY, "598.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/ET_Area");
+    textShuttleLWP_ET_Area->SetToolTip("External tank area");
+    new wxStaticText(panel_Init, wxID_ANY, "ft2", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "CD", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_ET_CD = new wxTextCtrl(panel_Init, wxID_ANY, "2.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/ET_CD");
+    textShuttleLWP_ET_CD->SetToolTip("External tank drag coefficient");
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "WEIGHT", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_ET_WT = new wxTextCtrl(panel_Init, wxID_ANY, "75000.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/ET_Weight");
+    textShuttleLWP_ET_WT->SetToolTip("Vehicle weight");
+    new wxStaticText(panel_Init, wxID_ANY, "lbm", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "PFA", wxPoint(minX, Y + difftext));
+    Add(text_ShuttleLWP_PFA = new wxTextCtrl(panel_Init, wxID_ANY, "14.4", wxPoint(minX + diffX, Y)), "/ShuttleLWP/PFA");
+    text_ShuttleLWP_PFA->SetToolTip(wxT("Powered flight arc"));
+    new wxStaticText(panel_Init, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "PFT", wxPoint(minX, Y + difftext));
+    Add(text_ShuttleLWP_PFT = new wxTextCtrl(panel_Init, wxID_ANY, "0:00:08:39.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/PFT");
+    text_ShuttleLWP_PFT->SetToolTip(wxT("Powered flight time"));
+    new wxStaticText(panel_Init, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "RAD", wxPoint(minX, Y + difftext));
+    Add(text_ShuttleLWP_RAD = new wxTextCtrl(panel_Init, wxID_ANY, "21241700.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/RAD");
+    text_ShuttleLWP_RAD->SetToolTip(wxT("Radius of insertion"));
+    new wxStaticText(panel_Init, wxID_ANY, "ft", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "VEL", wxPoint(minX, Y + difftext));
+    Add(text_ShuttleLWP_VEL = new wxTextCtrl(panel_Init, wxID_ANY, "25928.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/VEL");
+    text_ShuttleLWP_VEL->SetToolTip(wxT("Velocity of insertion"));
+    new wxStaticText(panel_Init, wxID_ANY, "fps", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "FPA", wxPoint(minX, Y + difftext));
+    Add(text_ShuttleLWP_FPA = new wxTextCtrl(panel_Init, wxID_ANY, "0.6", wxPoint(minX + diffX, Y)), "/ShuttleLWP/FPA");
+    text_ShuttleLWP_FPA->SetToolTip(wxT("Flightpath angle of insertion"));
+    new wxStaticText(panel_Init, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "OPT", wxPoint(minX, Y + difftext));
+    Add(text_ShuttleLWP_OPT = new wxTextCtrl(panel_Init, wxID_ANY, "-0:00:05:40.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/OPT");
+    text_ShuttleLWP_OPT->SetToolTip(wxT("Delta time to be subtracted from analytical inplane launch time to obtain empirical launch time"));
+    new wxStaticText(panel_Init, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "DTO", wxPoint(minX, Y + difftext));
+    Add(text_ShuttleLWP_DTO = new wxTextCtrl(panel_Init, wxID_ANY, "-0:00:05:00.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/DTO");
+    text_ShuttleLWP_DTO->SetToolTip(wxT("Time from optimum launch time to launch window opening"));
+    new wxStaticText(panel_Init, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "DTC", wxPoint(minX, Y + difftext));
+    Add(text_ShuttleLWP_DTC = new wxTextCtrl(panel_Init, wxID_ANY, "0:00:05:00.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/DTC");
+    text_ShuttleLWP_DTC->SetToolTip(wxT("Time from optimum launch time to launch window closing"));
+    new wxStaticText(panel_Init, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    minX += 256;
+    Y = minY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "ET SEP PARAMETERS", wxPoint(minX + diffX, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "DVX", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_ET_Sep_DVX = new wxTextCtrl(panel_Init, wxID_ANY, "5.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/ET_Sep_DVX");
+    textShuttleLWP_ET_Sep_DVX->SetToolTip("ET separation Delta V X in feet per second");
+    new wxStaticText(panel_Init, wxID_ANY, "fps", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "DVY", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_ET_Sep_DVY = new wxTextCtrl(panel_Init, wxID_ANY, "0.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/ET_Sep_DVY");
+    textShuttleLWP_ET_Sep_DVY->SetToolTip("ET separation Delta V Y in feet per second");
+    new wxStaticText(panel_Init, wxID_ANY, "fps", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "DVZ", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_ET_Sep_DVZ = new wxTextCtrl(panel_Init, wxID_ANY, "-5.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/ET_Sep_DVZ");
+    textShuttleLWP_ET_Sep_DVZ->SetToolTip("ET separation Delta V Z in feet per second");
+    new wxStaticText(panel_Init, wxID_ANY, "fps", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "DTIG", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_ET_Sep_DTIG = new wxTextCtrl(panel_Init, wxID_ANY, "0:00:00:12.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/ET_Sep_DTIG");
+    textShuttleLWP_ET_Sep_DTIG->SetToolTip("Time from MECO to ET separation");
+    new wxStaticText(panel_Init, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "MISC PARAMETERS", wxPoint(minX + diffX, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "PHASE CNTRL FLAG", wxPoint(minX, Y + difftext));
+    strings.Add(wxT("0"));
+    strings.Add(wxT("1"));
+    strings.Add(wxT("2"));
+    Add(comboShuttleLWP_PhaseCntrlFlag = new wxChoice(panel_Init, wxID_ANY, wxPoint(minX + diffX + 50, Y), wxDefaultSize, strings), "/ShuttleLWP/Phase_Control_Flag");
+    comboShuttleLWP_PhaseCntrlFlag->SetToolTip(wxT("Phase control"));
+    comboShuttleLWP_PhaseCntrlFlag->SetSelection(0);
+    strings.clear();
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "WRAP FLAG", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_WRAP_FLAG = new wxTextCtrl(panel_Init, wxID_ANY, "0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/WRAP");
+    textShuttleLWP_WRAP_FLAG->SetToolTip("Multiples of 360 degrees of phase angle");
+    Y += diffY;
+
+    new wxStaticText(panel_Init, wxID_ANY, "LAUNCH AZ DIR FLAG", wxPoint(minX, Y + difftext));
+    Add(checkShuttleLWP_LAUNCH_AZ_DIR_FLAG = new wxCheckBox(panel_Init, wxID_ANY, "N", wxPoint(minX + diffX + 70, Y + difftext), wxDefaultSize, wxALIGN_LEFT), "/ShuttleLWP/Launch_Azimuth_Dir_Flag");
+    checkShuttleLWP_LAUNCH_AZ_DIR_FLAG->SetValue(true);
+    Y += diffY;
+
+    // CONSTANTS
+
+    minX = 10;
+    Y = minY;
+
+    new wxStaticText(panel_Constants, wxID_ANY, "Use drag?", wxPoint(minX, Y + difftext));
+    Add(checkShuttleLWP_Drag = new wxCheckBox(panel_Constants, wxID_ANY, "YES", wxPoint(minX + diffX + 70, Y + difftext), wxDefaultSize, wxALIGN_LEFT), "/ShuttleLWP/Drag_Flag");
+    checkShuttleLWP_Drag->SetValue(true);
+    Y += diffY;
+
+    // LNCH REF SETS
+    int diffXSets = 150;
+
+    minX = 10;
+    Y = minY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "REF SET 1", wxPoint(minX + diffX + 30, Y));
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "REF SET 2", wxPoint(minX + diffX + 30 + diffXSets, Y));
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "REF SET 3", wxPoint(minX + diffX + 30 + diffXSets * 2, Y));
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "REF SET 4", wxPoint(minX + diffX + 30 + diffXSets * 3, Y));
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "OMS-1 TGTS", wxPoint(minX, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "DTIG", wxPoint(minX, Y + difftext));
+    for (int i = 0; i < 4; i++)
+    {
+        Add(textShuttleLWP_OMS1_DTIG[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "0:00:02:00.000", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS1_DTIG_" + wxString::Format("%d", i));
+        textShuttleLWP_OMS1_DTIG[i]->SetToolTip("Time from MECO to OMS-1");
+    }
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "C1", wxPoint(minX, Y + difftext));
+    for (int i = 0; i < 4; i++)
+    {
+        Add(textShuttleLWP_OMS1_C1[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "0.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS1_C1_" + wxString::Format("%d", i));
+        textShuttleLWP_OMS1_C1[i]->SetToolTip("C1 for OMS-1");
+    }
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "C2", wxPoint(minX, Y + difftext));
+    for (int i = 0; i < 4; i++)
+    {
+        Add(textShuttleLWP_OMS1_C2[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "0.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS1_C2_" + wxString::Format("%d", i));
+        textShuttleLWP_OMS1_C2[i]->SetToolTip("C2 for OMS-1");
+    }
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "HT", wxPoint(minX, Y + difftext));
+    for (int i = 0; i < 4; i++)
+    {
+        Add(textShuttleLWP_OMS1_HT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "158.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS1_HT_" + wxString::Format("%d", i));
+        textShuttleLWP_OMS1_HT[i]->SetToolTip("Height for OMS-1");
+    }
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "THETA-T", wxPoint(minX, Y + difftext));
+    for (int i = 0; i < 4; i++)
+    {
+        Add(textShuttleLWP_OMS1_THETAT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "154.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS1_THETAT_" + wxString::Format("%d", i));
+        textShuttleLWP_OMS1_THETAT[i]->SetToolTip("Theta-T for OMS-1");
+    }
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "OMS-2 TGTS", wxPoint(minX, Y + difftext));
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "DTIG", wxPoint(minX, Y + difftext));
+    for (int i = 0; i < 4; i++)
+    {
+        Add(textShuttleLWP_OMS2_DTIG[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "0:00:35:01.000", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS2_DTIG_" + wxString::Format("%d", i));
+        textShuttleLWP_OMS2_DTIG[i]->SetToolTip("Time from MECO to OMS-1");
+    }
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "C1", wxPoint(minX, Y + difftext));
+    for (int i = 0; i < 4; i++)
+    {
+        Add(textShuttleLWP_OMS2_C1[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "0.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS2_C1_" + wxString::Format("%d", i));
+        textShuttleLWP_OMS2_C1[i]->SetToolTip("C1 for OMS-2");
+    }
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "C2", wxPoint(minX, Y + difftext));
+    for (int i = 0; i < 4; i++)
+    {
+        Add(textShuttleLWP_OMS2_C2[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "0.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS2_C2_" + wxString::Format("%d", i));
+        textShuttleLWP_OMS2_C2[i]->SetToolTip("C2 for OMS-2");
+    }
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "HT", wxPoint(minX, Y + difftext));
+    for (int i = 0; i < 4; i++)
+    {
+        Add(textShuttleLWP_OMS2_HT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "110.8", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS2_HT_" + wxString::Format("%d", i));
+        textShuttleLWP_OMS2_HT[i]->SetToolTip("Height for OMS-2");
+    }
+    Y += diffY;
+
+    new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "THETA-T", wxPoint(minX, Y + difftext));
+    for (int i = 0; i < 4; i++)
+    {
+        Add(textShuttleLWP_OMS2_THETAT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "338.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS2_THETAT_" + wxString::Format("%d", i));
+        textShuttleLWP_OMS2_THETAT[i]->SetToolTip("Theta-T for OMS-2");
+    }
+    Y += diffY;
+
+    // LWP EXECUTION
+
+    minX = 10;
+    Y = minY;
+
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "REF SET ID", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_LW_Ref_Set_ID = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "1", wxPoint(minX + diffX * 3, Y), wxSize(20, -1)), "/ShuttleLWP/LW_Ref_Set_ID");
+    Y += diffY;
+
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "The following are all optional inputs for LWP:", wxPoint(minX, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "Desired OMS-2 Phase Angle(s)", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_Desired_Phase_1 = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX * 3, Y)), "/ShuttleLWP/Desired_Phase_1");
+    Y += diffY;
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "(DEG, D:M:S, or D.D)", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_Desired_Phase_2 = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX * 3, Y)), "/ShuttleLWP/Desired_Phase_2");
+    Y += diffY;
+
+    new wxButton(panel_LWP_EXECUTION, ID_Button_Shuttle_LWP_Execute, wxT("Execute"),
+        wxPoint(minX + diffX + 150, Y), wxDefaultSize);
+    Y += diffY;
+    new wxStaticLine(panel_LWP_EXECUTION, wxID_STATIC,
+        wxPoint(minX, Y), wxSize(500, -1), wxLI_HORIZONTAL);
+    Y += diffY;
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "LAUNCH WINDOW PROCESSOR OUTPUT", wxPoint(minX + diffX, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "OPTIMUM L/O", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LW_Out[0] = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX + 96, Y), wxDefaultSize, wxTE_READONLY);
+    Y += diffY;
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "PHASE", wxPoint(minX + diffX, Y + difftext));
+    textShuttleLWP_LW_Out[1] = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX + 128, Y), wxSize(60, -1), wxTE_READONLY);
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    int PlanarDiff = 256;
+
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "PLANAR OPEN", wxPoint(minX, Y + difftext));
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "PLANAR CLOSE", wxPoint(minX + PlanarDiff, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "L/O", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LW_Out[2] = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "L/O", wxPoint(minX + PlanarDiff, Y + difftext));
+    textShuttleLWP_LW_Out[4] = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX + PlanarDiff + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    Y += diffY;
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "PHASE", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LW_Out[3] = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "PHASE", wxPoint(minX + PlanarDiff, Y + difftext));
+    textShuttleLWP_LW_Out[5] = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX + PlanarDiff + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + PlanarDiff + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "DESIRED OMS-2 PHASE ANGLE(S)", wxPoint(minX, Y + difftext));
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "L/O TO ACHIEVE DESIRED PHASE", wxPoint(minX + PlanarDiff, Y + difftext));
+    Y += diffY;
+    textShuttleLWP_LW_Out[6] = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX  + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    textShuttleLWP_LW_Out[7] = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX + PlanarDiff + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    Y += diffY;
+    textShuttleLWP_LW_Out[8] = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LWP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    textShuttleLWP_LW_Out[9] = new wxTextCtrl(panel_LWP_EXECUTION, wxID_ANY, "", wxPoint(minX + PlanarDiff + diffX, Y), wxDefaultSize, wxTE_READONLY);
+
+    // LTP EXECUTION
+    minX = 10;
+    Y = minY;
+
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "GMT L/O", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_LT_GMTLO = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "00:00:00.000", wxPoint(minX + diffX * 3, Y)), "/ShuttleLWP/LT_GMTLO");
+    Y += diffY;
+
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "REF SET ID", wxPoint(minX, Y + difftext));
+    Add(textShuttleLWP_LT_Ref_Set_ID = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "1", wxPoint(minX + diffX * 3, Y), wxSize(20, -1)), "/ShuttleLWP/LT_Ref_Set_ID");
+    Y += diffY;
+
+    new wxButton(panel_LTP_EXECUTION, ID_Button_Shuttle_LTP_Execute, wxT("Execute"),
+        wxPoint(minX + diffX + 150, Y), wxDefaultSize);
+    Y += diffY;
+
+    new wxStaticLine(panel_LTP_EXECUTION, wxID_STATIC,
+        wxPoint(minX, Y), wxSize(500, -1), wxLI_HORIZONTAL);
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "LAUNCH TARGETING PROCESSOR OUTPUT", wxPoint(minX + diffX*2, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "GMT L/O", wxPoint(minX + diffX, Y + difftext));
+    textShuttleLWP_LT_Out[0] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX*3, Y), wxDefaultSize, wxTE_READONLY);
+    Y += diffY;
+    Y += diffY;
+
+    int minOutY = Y;
+
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "CHASER", wxPoint(minX + diffX, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "MECO", wxPoint(minX + diffX, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "MECO", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[1] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "VMECO", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[2] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "fps", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "RMECO", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[3] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "nm", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "GMECO", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[4] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "IMECO", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[5] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "PHASE", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[6] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "HA", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[7] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "nm", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "HP", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[8] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "nm", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "LONG", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[9] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    minX += 240;
+    new wxStaticLine(panel_LTP_EXECUTION, wxID_STATIC, wxPoint(minX - 8, minOutY), wxSize(-1, 300), wxLI_VERTICAL);
+    Y = minOutY;
+
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "OMS-1/MPS DUMP", wxPoint(minX + diffX, Y + difftext));
+    Y += diffY;
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "TIG", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[10] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "DELTA V", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[11] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "fps", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "HA", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[12] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "nm", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "HP", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[13] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "nm", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    minX += 240;
+    new wxStaticLine(panel_LTP_EXECUTION, wxID_STATIC, wxPoint(minX - 8, minOutY), wxSize(-1, 300), wxLI_VERTICAL);
+    Y = minOutY;
+
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "OMS-2", wxPoint(minX + diffX, Y + difftext));
+    Y += diffY;
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "TIG", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[14] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "DELTA V", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[15] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "fps", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "HA", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[16] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "nm", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "HP", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[17] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "nm", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "NODE", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[18] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "PHASE", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[19] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "PERIOD", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[20] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    Y += diffY;
+
+    minX += 240;
+    new wxStaticLine(panel_LTP_EXECUTION, wxID_STATIC, wxPoint(minX - 8, minOutY), wxSize(-1, 300), wxLI_VERTICAL);
+    Y = minOutY;
+
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "TGT (AT ASCN)", wxPoint(minX + diffX, Y + difftext));
+    Y += diffY;
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "HA", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[21] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "nm", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "HP", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[22] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "nm", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "LONG", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[23] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "DELN", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[24] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel_LTP_EXECUTION, wxID_ANY, "PERIOD", wxPoint(minX, Y + difftext));
+    textShuttleLWP_LT_Out[25] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
+    Y += diffY;
+
+    new wxButton(panel_LTP_EXECUTION, ID_Button_ShuttleLWP_SaveStateVector, wxT("Save SV"),
+        wxPoint(minX + 16, Y + 64), wxDefaultSize);
+
+    new wxButton(panel_LTP_EXECUTION, ID_Button_ShuttleLWP_Export, wxT("Export"),
+        wxPoint(minX + 16 + diffX + 64, Y + 64), wxDefaultSize);
+}
+
 void FDSFrame::AddOMPPage()
 {
     int minX, minY, diffX, diffY, counter, difftext, Y, diffunit;
@@ -509,23 +1108,23 @@ void FDSFrame::AddOMPPage()
     Y = minY;
 
     new wxStaticText(panel3, wxID_ANY, "GMTLO", wxPoint(minX, Y + difftext));
-    textOMP_GMTLO = new wxTextCtrl(panel3, wxID_ANY, "13:00:00.000", wxPoint(minX + diffX, Y));
+    Add(textOMP_GMTLO = new wxTextCtrl(panel3, wxID_ANY, "13:00:00.000", wxPoint(minX + diffX, Y)), "/OMP/GMTLO");
     textOMP_GMTLO->SetToolTip(wxT("Lift-off time"));
     new wxStaticText(panel3, wxID_ANY, "GMT", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel3, wxID_ANY, "Chaser", wxPoint(minX, Y + difftext));
-    textOMP_Chaser = new wxTextCtrl(panel3, wxID_ANY, "LWP.txt", wxPoint(minX + diffX, Y));
+    Add(textOMP_Chaser = new wxTextCtrl(panel3, wxID_ANY, "LWP.txt", wxPoint(minX + diffX, Y)), "/OMP/Chaser");
     textOMP_Chaser->SetToolTip(wxT("Chaser state vector file"));
     Y += diffY;
 
     new wxStaticText(panel3, wxID_ANY, "Target", wxPoint(minX, Y + difftext));
-    textOMP_Target = new wxTextCtrl(panel3, wxID_ANY, "Skylab.txt", wxPoint(minX + diffX, Y));
+    Add(textOMP_Target = new wxTextCtrl(panel3, wxID_ANY, "Skylab.txt", wxPoint(minX + diffX, Y)), "/OMP/Target");
     textOMP_Target->SetToolTip(wxT("Target state vector file"));
     Y += diffY;
 
     new wxStaticText(panel3, wxID_ANY, "MCT", wxPoint(minX, Y + difftext));
-    textOMP_MCT = new wxTextCtrl(panel3, wxID_ANY, "SL-2 MCT.txt", wxPoint(minX + diffX, Y));
+    Add(textOMP_MCT = new wxTextCtrl(panel3, wxID_ANY, "SL-2 MCT.txt", wxPoint(minX + diffX, Y)), "/OMP/MCT");
     textOMP_MCT->SetToolTip(wxT("Maneuver constraints table file"));
 
     new wxButton(panel3, ID_Button_MCT_View, wxT("View"),
@@ -586,23 +1185,23 @@ void FDSFrame::AddSkylabLWPPage()
     Y = minY;
 
     new wxStaticText(panel4, wxID_ANY, "TRGVEC", wxPoint(minX, Y + difftext));
-    textSkylabLWP_TargetVector = new wxTextCtrl(panel4, wxID_ANY, "Skylab.txt", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_TargetVector = new wxTextCtrl(panel4, wxID_ANY, "Skylab.txt", wxPoint(minX + diffX, Y)), "/SkylabLWP/TargetVector");
     textSkylabLWP_TargetVector->SetToolTip(wxT("Target vehicle state vector"));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "CKFACTOR", wxPoint(minX, Y + difftext));
-    textSkylabLWP_CKFactor = new wxTextCtrl(panel4, wxID_ANY, "1.0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_CKFactor = new wxTextCtrl(panel4, wxID_ANY, "1.0", wxPoint(minX + diffX, Y)), "/SkylabLWP/CKFactor");
     textSkylabLWP_CKFactor->SetToolTip(wxT("Chaser vehicle drag multiplier"));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "CAREA", wxPoint(minX, Y + difftext));
-    textSkylabLWP_CArea = new wxTextCtrl(panel4, wxID_ANY, "129.4", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_CArea = new wxTextCtrl(panel4, wxID_ANY, "129.4", wxPoint(minX + diffX, Y)), "/SkylabLWP/CArea");
     textSkylabLWP_CArea->SetToolTip(wxT("Chaser vehicle reference area"));
     new wxStaticText(panel4, wxID_ANY, "sq ft", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "CWHT", wxPoint(minX, Y + difftext));
-    textSkylabLWP_CWHT = new wxTextCtrl(panel4, wxID_ANY, "300000.0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_CWHT = new wxTextCtrl(panel4, wxID_ANY, "300000.0", wxPoint(minX + diffX, Y)), "/SkylabLWP/CWHT");
     textSkylabLWP_CWHT->SetToolTip(wxT("Chaser vehicle weight at insertion"));
     new wxStaticText(panel4, wxID_ANY, "lbs", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -610,66 +1209,67 @@ void FDSFrame::AddSkylabLWPPage()
     new wxStaticText(panel4, wxID_ANY, "NS", wxPoint(minX, Y + difftext));
     strings.Add(wxT("North"));
     strings.Add(wxT("South"));
-    comboSkylabLWP_NS = new wxComboBox(panel4, wxID_ANY, wxT("North"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboSkylabLWP_NS = new wxChoice(panel4, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/SkylabLWP/NS");
     comboSkylabLWP_NS->SetToolTip(wxT("Inplane launch window opening and closing times option"));
+    comboSkylabLWP_NS->SetSelection(0);
     strings.clear();
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "DAY", wxPoint(minX, Y + difftext));
-    textSkylabLWP_DAY = new wxTextCtrl(panel4, wxID_ANY, "0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_DAY = new wxTextCtrl(panel4, wxID_ANY, "0", wxPoint(minX + diffX, Y)), "/SkylabLWP/DAY");
     textSkylabLWP_DAY->SetToolTip(wxT("Day on which launch window times are computed, relative to base date"));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "LATLS", wxPoint(minX, Y + difftext));
-    textSkylabLWP_LATLS = new wxTextCtrl(panel4, wxID_ANY, "28.627", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_LATLS = new wxTextCtrl(panel4, wxID_ANY, "28.627", wxPoint(minX + diffX, Y)), "/SkylabLWP/LATLS");
     textSkylabLWP_LATLS->SetToolTip(wxT("Geocentric latitude of launch site"));
     new wxStaticText(panel4, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "LONGLS", wxPoint(minX, Y + difftext));
-    textSkylabLWP_LONGLS = new wxTextCtrl(panel4, wxID_ANY, "279.379", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_LONGLS = new wxTextCtrl(panel4, wxID_ANY, "279.379", wxPoint(minX + diffX, Y)), "/SkylabLWP/LONGLS");
     textSkylabLWP_LONGLS->SetToolTip(wxT("Geographic longitude of launch site"));
     new wxStaticText(panel4, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "PFT", wxPoint(minX, Y + difftext));
-    textSkylabLWP_PFT = new wxTextCtrl(panel4, wxID_ANY, "600.0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_PFT = new wxTextCtrl(panel4, wxID_ANY, "600.0", wxPoint(minX + diffX, Y)), "/SkylabLWP/PFT");
     textSkylabLWP_PFT->SetToolTip(wxT("Powered flight time"));
     new wxStaticText(panel4, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "PFA", wxPoint(minX, Y + difftext));
-    textSkylabLWP_PFA = new wxTextCtrl(panel4, wxID_ANY, "18.0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_PFA = new wxTextCtrl(panel4, wxID_ANY, "18.0", wxPoint(minX + diffX, Y)), "/SkylabLWP/PFA");
     textSkylabLWP_PFA->SetToolTip(wxT("Powered flight arc"));
     new wxStaticText(panel4, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "YSMAX", wxPoint(minX, Y + difftext));
-    textSkylabLWP_YSMAX = new wxTextCtrl(panel4, wxID_ANY, "5.0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_YSMAX = new wxTextCtrl(panel4, wxID_ANY, "5.0", wxPoint(minX + diffX, Y)), "/SkylabLWP/YSMAX");
     textSkylabLWP_YSMAX->SetToolTip(wxT("Yaw steering limit"));
     new wxStaticText(panel4, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "DTOPT", wxPoint(minX, Y + difftext));
-    textSkylabLWP_DTOPT = new wxTextCtrl(panel4, wxID_ANY, "360.0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_DTOPT = new wxTextCtrl(panel4, wxID_ANY, "360.0", wxPoint(minX + diffX, Y)), "/SkylabLWP/DTOPT");
     textSkylabLWP_DTOPT->SetToolTip(wxT("Delta time to be subtracted from analytical inplane launch time to obtain empirical launch time"));
     new wxStaticText(panel4, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "RINS", wxPoint(minX, Y + difftext));
-    textSkylabLWP_RINS = new wxTextCtrl(panel4, wxID_ANY, "21417907.0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_RINS = new wxTextCtrl(panel4, wxID_ANY, "21417907.0", wxPoint(minX + diffX, Y)), "/SkylabLWP/RINS");
     textSkylabLWP_RINS->SetToolTip(wxT("Radius of insertion"));
     new wxStaticText(panel4, wxID_ANY, "ft", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "VINS", wxPoint(minX, Y + difftext));
-    textSkylabLWP_VINS = new wxTextCtrl(panel4, wxID_ANY, "25705.8", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_VINS = new wxTextCtrl(panel4, wxID_ANY, "25705.8", wxPoint(minX + diffX, Y)), "/SkylabLWP/VINS");
     textSkylabLWP_VINS->SetToolTip(wxT("Velocity of insertion"));
     new wxStaticText(panel4, wxID_ANY, "ft/s", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "GAMINS", wxPoint(minX, Y + difftext));
-    textSkylabLWP_GAMINS = new wxTextCtrl(panel4, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_GAMINS = new wxTextCtrl(panel4, wxID_ANY, "0.0", wxPoint(minX + diffX, Y)), "/SkylabLWP/GAMINS");
     textSkylabLWP_GAMINS->SetToolTip(wxT("Flightpath angle of insertion"));
     new wxStaticText(panel4, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -681,24 +1281,25 @@ void FDSFrame::AddSkylabLWPPage()
     strings.Add(wxT("Use positive value"));
     strings.Add(wxT("Use negative value"));
     strings.Add(wxT("Use lowest absolute value"));
-    comboSkylabLWP_NEGTIV = new wxComboBox(panel4, wxID_ANY, wxT("Use positive value"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboSkylabLWP_NEGTIV = new wxChoice(panel4, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/SkylabLWP/NEGTIV");
     comboSkylabLWP_NEGTIV->SetToolTip(wxT("Initial phase angle control flag"));
+    comboSkylabLWP_NEGTIV->SetSelection(0);
     strings.clear();
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "WRAP", wxPoint(minX, Y + difftext));
-    textSkylabLWP_WRAP = new wxTextCtrl(panel4, wxID_ANY, "0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_WRAP = new wxTextCtrl(panel4, wxID_ANY, "0", wxPoint(minX + diffX, Y)), "/SkylabLWP/WRAP");
     textSkylabLWP_WRAP->SetToolTip(wxT("Flag to wrap initial phase angle"));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "DTOPEN", wxPoint(minX, Y + difftext));
-    textSkylabLWP_DTOPEN = new wxTextCtrl(panel4, wxID_ANY, "7.75", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_DTOPEN = new wxTextCtrl(panel4, wxID_ANY, "7.75", wxPoint(minX + diffX, Y)), "/SkylabLWP/DTOPEN");
     textSkylabLWP_DTOPEN->SetToolTip(wxT("Delta time from optimum inplane launch time to opening of window"));
     new wxStaticText(panel4, wxID_ANY, "min", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "DTCLOSE", wxPoint(minX, Y + difftext));
-    textSkylabLWP_DTCLOSE = new wxTextCtrl(panel4, wxID_ANY, "7.75", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_DTCLOSE = new wxTextCtrl(panel4, wxID_ANY, "7.75", wxPoint(minX + diffX, Y)), "/SkylabLWP/DTCLOSE");
     textSkylabLWP_DTCLOSE->SetToolTip(wxT("Delta time from optimum inplane launch time to closing of window"));
     new wxStaticText(panel4, wxID_ANY, "min", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -706,46 +1307,47 @@ void FDSFrame::AddSkylabLWPPage()
     new wxStaticText(panel4, wxID_ANY, "IR", wxPoint(minX, Y + difftext));
     strings.Add(wxT("Compute launch window"));
     strings.Add(wxT("Input launch time only"));
-    comboSkylabLWP_IR = new wxComboBox(panel4, wxID_ANY, wxT("Compute launch window"), wxPoint(minX + diffX, Y), wxDefaultSize, strings, wxCB_READONLY);
+    Add(comboSkylabLWP_IR = new wxChoice(panel4, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/SkylabLWP/IR");
     comboSkylabLWP_IR->SetToolTip(wxT("Liftoff time flag"));
+    comboSkylabLWP_IR->SetSelection(0);
     strings.clear();
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "TLO", wxPoint(minX, Y + difftext));
-    textSkylabLWP_TLO = new wxTextCtrl(panel4, wxID_ANY, "00:00:00:000", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_TLO = new wxTextCtrl(panel4, wxID_ANY, "00:00:00:000", wxPoint(minX + diffX, Y)), "/SkylabLWP/TLO");
     textSkylabLWP_TLO->SetToolTip(wxT("Time of liftoff (if input)"));
     new wxStaticText(panel4, wxID_ANY, "GMT", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "MI", wxPoint(minX, Y + difftext));
-    textSkylabLWP_MI = new wxTextCtrl(panel4, wxID_ANY, "5", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_MI = new wxTextCtrl(panel4, wxID_ANY, "5", wxPoint(minX + diffX, Y)), "/SkylabLWP/MI");
     textSkylabLWP_MI->SetToolTip(wxT("Initial M-line or rendezvous number"));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "MF", wxPoint(minX, Y + difftext));
-    textSkylabLWP_MF = new wxTextCtrl(panel4, wxID_ANY, "8", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_MF = new wxTextCtrl(panel4, wxID_ANY, "8", wxPoint(minX + diffX, Y)), "/SkylabLWP/MF");
     textSkylabLWP_MF->SetToolTip(wxT("Final M-line or rendezvous number"));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "DTSEP", wxPoint(minX, Y + difftext));
-    textSkylabLWP_DTSEP = new wxTextCtrl(panel4, wxID_ANY, "000:15:00.000", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_DTSEP = new wxTextCtrl(panel4, wxID_ANY, "000:15:00.000", wxPoint(minX + diffX, Y)), "/SkylabLWP/DTSEP");
     textSkylabLWP_DTSEP->SetToolTip(wxT("Time from insertion to separation"));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "DVSEP", wxPoint(minX, Y + difftext));
-    textSkylabLWP_DVSEP = new wxTextCtrl(panel4, wxID_ANY, "+3.0 +0.0 +0.0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_DVSEP = new wxTextCtrl(panel4, wxID_ANY, "+3.0 +0.0 +0.0", wxPoint(minX + diffX, Y)), "/SkylabLWP/DVSEP");
     textSkylabLWP_DVSEP->SetToolTip(wxT("Delta velocity vector of separation"));
     new wxStaticText(panel4, wxID_ANY, "ft/s", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "DVWO", wxPoint(minX, Y + difftext));
-    textSkylabLWP_DVWO = new wxTextCtrl(panel4, wxID_ANY, "30.0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_DVWO = new wxTextCtrl(panel4, wxID_ANY, "30.0", wxPoint(minX + diffX, Y)), "/SkylabLWP/DVWO");
     textSkylabLWP_DVWO->SetToolTip(wxT("Delta velocity of phase window opening (Minimum NCC DV)"));
     new wxStaticText(panel4, wxID_ANY, "ft/s", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
 
     new wxStaticText(panel4, wxID_ANY, "DVWC", wxPoint(minX, Y + difftext));
-    textSkylabLWP_DVWC = new wxTextCtrl(panel4, wxID_ANY, "30.0", wxPoint(minX + diffX, Y));
+    Add(textSkylabLWP_DVWC = new wxTextCtrl(panel4, wxID_ANY, "30.0", wxPoint(minX + diffX, Y)), "/SkylabLWP/DVWC");
     textSkylabLWP_DVWC->SetToolTip(wxT("Delta velocity of phase window closing (Minimum NC-1 DV)"));
     new wxStaticText(panel4, wxID_ANY, "ft/s", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -778,8 +1380,10 @@ void FDSFrame::AddStateVectorPage()
     strings.Clear();
     strings.Add("TEG");
     strings.Add("J2000");
+    strings.Add("M50");
     strings.Add("TLE");
-    comboStateVectorCoordinateSystem = new wxComboBox(panel5, wxID_ANY, wxEmptyString, wxPoint(minX + diffX, Y), wxDefaultSize, strings);
+    comboStateVectorCoordinateSystem = new wxChoice(panel5, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings);
+    comboStateVectorCoordinateSystem->SetSelection(0);
     Y += diffY;
 
     new wxStaticText(panel5, wxID_ANY, "SV", wxPoint(minX, Y + difftext));
@@ -824,10 +1428,9 @@ std::string StringFromTextBox(wxTextCtrl* box)
 
 void FDSFrame::OnButtonLWPGenerate(wxCommandEvent& event)
 {
-    if (SetConstants())
+    if (core->IsInitialized() == false)
     {
-        //Error output
-        SetStatusText("Error during initialization!");
+        SetStatusText("Date not initialized!");
         return;
     }
 
@@ -1034,20 +1637,20 @@ void FDSFrame::OnButtonLWPGenerate(wxCommandEvent& event)
 
 void FDSFrame::OnButtonLWPSaveStateVector(wxCommandEvent& event)
 {
-    if (core == NULL)
+    if (core->IsInitialized() == false)
     {
-        SetStatusText("Launch day not initialized!");
+        SetStatusText("Date not initialized!");
         return;
     }
 
-    wxTextEntryDialog dialog(this, "Enter name for the file:", "LWP chaser state vector file", "LWP", wxOK | wxCANCEL);
+    wxTextEntryDialog dialog(this, "Enter name for the file:", "LWP chaser state vector file", "LWP.txt", wxOK | wxCANCEL);
 
     if (dialog.ShowModal() == wxID_OK)
     {
         wxString str = dialog.GetValue();
         wxString project = textProjectFile->GetLineText(0);
         wxString path = "Projects/" + project + "/State Vectors/";
-        wxString filepath = path + str + ".txt";
+        wxString filepath = path + str;
 
         //Save file
         wxTextFile file(filepath);
@@ -1079,13 +1682,6 @@ void FDSFrame::OnButtonLWPSaveStateVector(wxCommandEvent& event)
 void FDSFrame::OnButtonOMPGenerate(wxCommandEvent& event)
 {
     //Calculate OMP
-
-    if (SetConstants())
-    {
-        //Error output
-        SetStatusText(wxT("Error during initialization!"));
-        return;
-    }
 
     std::string inputs[5];
 
@@ -1126,13 +1722,6 @@ void FDSFrame::OnButtonOMPGenerate(wxCommandEvent& event)
 
 void FDSFrame::OnButtonSkylabLWPGenerate(wxCommandEvent& event)
 {
-    if (SetConstants())
-    {
-        //Error output
-        SetStatusText(wxT("Error during initialization!"));
-        return;
-    }
-
     std::string inputs[28];
 
     inputs[0] = StringFromTextBox(textProjectFile);
@@ -1268,15 +1857,26 @@ void LoadTextCtrl(wxFileConfig* config, wxTextCtrl* ctrl, wxString str)
     if (config->Read(str, &strtemp)) ctrl->ChangeValue(strtemp);
 }
 
-void SaveComboBox(wxFileConfig* config, wxComboBox* ctrl, wxString str)
+void SaveChoiceBox(wxFileConfig* config, wxChoice* ctrl, wxString str)
 {
     config->Write(str, ctrl->GetSelection());
 }
 
-void LoadComboBox(wxFileConfig* config, wxComboBox* ctrl, wxString str)
+void LoadChoiceBox(wxFileConfig* config, wxChoice* ctrl, wxString str)
 {
     int inttemp;
     if (config->Read(str, &inttemp)) ctrl->SetSelection(inttemp);
+}
+
+void SaveCheckBox(wxFileConfig* config, wxCheckBox* ctrl, wxString str)
+{
+    config->Write(str, ctrl->GetValue());
+}
+
+void LoadCheckBox(wxFileConfig* config, wxCheckBox* ctrl, wxString str)
+{
+    bool bTemp;
+    if (config->Read(str, &bTemp)) ctrl->SetValue(bTemp);
 }
 
 void FDSFrame::OnButton_Save(wxCommandEvent& event)
@@ -1317,87 +1917,18 @@ void FDSFrame::OnButton_Save(wxCommandEvent& event)
 
     wxFileConfig* config = new wxFileConfig("FDS", wxEmptyString, file, wxEmptyString, wxCONFIG_USE_LOCAL_FILE | wxCONFIG_USE_RELATIVE_PATH);
 
-    config->SetPath("/Config");
-    SaveComboBox(config, comboWorld, "World");
-    SaveTextCtrl(config, textYear, "Year");
-    SaveTextCtrl(config, textMonth, "Month");
-    SaveTextCtrl(config, textDay, "Day");
-    SaveTextCtrl(config, textDayOfYear, "DOY");
-
-    config->SetPath("/LWP");
-    SaveTextCtrl(config, textLWPTargetVector, "TargetVector");
-    SaveTextCtrl(config, textLWPCKFactor, "CKFactor");
-    SaveTextCtrl(config, textLWPCArea, "CArea");
-    SaveTextCtrl(config, textLWPCWHT, "CWHT");
-    SaveComboBox(config, comboLWPLW, "LW");
-    SaveComboBox(config, comboLWPNS, "NS");
-    SaveTextCtrl(config, textLWPDay, "LWPDay");
-    SaveComboBox(config, comboLWP_LPT, "LPT");
-    SaveTextCtrl(config, textLWP_TSTART, "TSTART");
-    SaveTextCtrl(config, textLWP_TEND, "TEND");
-    SaveTextCtrl(config, textLWP_TSTEP, "TSTEP");
-    SaveComboBox(config, comboLWP_STABLE, "STABLE");
-    SaveTextCtrl(config, textLWP_STARS, "STARS");
-    SaveTextCtrl(config, textLWP_STARE, "STARE");
-    SaveTextCtrl(config, textLWP_LATLS, "LATLS");
-    SaveTextCtrl(config, textLWP_LONGLS, "LONGLS");
-    SaveTextCtrl(config, textLWP_PFT, "PFT");
-    SaveTextCtrl(config, textLWP_PFA, "PFA");
-    SaveTextCtrl(config, textLWP_YSMAX, "YSMAX");
-    SaveTextCtrl(config, textLWP_DTOPT, "DTOPT");
-    SaveTextCtrl(config, textLWP_DTGRR, "DTGRR");
-    SaveTextCtrl(config, textLWP_RINS, "RINS");
-    SaveTextCtrl(config, textLWP_VINS, "VINS");
-    SaveTextCtrl(config, textLWP_GAMINS, "GAMINS");
-    SaveComboBox(config, comboLWP_LOT, "LOT");
-    SaveTextCtrl(config, textLWP_GMTLOR, "GMTLOR");
-    SaveTextCtrl(config, textLWP_OFFSET, "OFFSET");
-    SaveTextCtrl(config, textLWP_BIAS, "BIAS");
-    SaveTextCtrl(config, textLWP_TPLANE, "TPLANE");
-    SaveTextCtrl(config, textLWP_TRANS, "TRANS");
-    SaveComboBox(config, comboLWP_INSCO, "INSCO");
-    SaveTextCtrl(config, textLWP_DHW, "DHW");
-    SaveTextCtrl(config, textLWP_DU, "DU");
-    SaveTextCtrl(config, textLWP_ANOM, "ANOM");
-    SaveComboBox(config, comboLWP_DELNOF, "DELNOF");
-    SaveTextCtrl(config, textLWP_DELNO, "DELNO");
-    SaveComboBox(config, comboLWP_NEGTIV, "NEGTIV");
-    SaveTextCtrl(config, textLWP_WRAP, "WRAP");
-
-    config->SetPath("/OMP");
-    SaveTextCtrl(config, textOMP_GMTLO, "GMTLO");
-    SaveTextCtrl(config, textOMP_Chaser, "Chaser");
-    SaveTextCtrl(config, textOMP_Target, "Target");
-    SaveTextCtrl(config, textOMP_MCT, "MCT");
-
-    config->SetPath("/SkylabLWP");
-    SaveTextCtrl(config, textSkylabLWP_TargetVector, "TargetVector");
-    SaveTextCtrl(config, textSkylabLWP_CKFactor, "CKFactor");
-    SaveTextCtrl(config, textSkylabLWP_CArea, "CArea");
-    SaveTextCtrl(config, textSkylabLWP_CWHT, "CWHT");
-    SaveComboBox(config, comboSkylabLWP_NS, "NS");
-    SaveTextCtrl(config, textSkylabLWP_DAY, "DAY");
-    SaveTextCtrl(config, textSkylabLWP_LATLS, "LATLS");
-    SaveTextCtrl(config, textSkylabLWP_LONGLS, "LONGLS");
-    SaveTextCtrl(config, textSkylabLWP_PFT, "PFT");
-    SaveTextCtrl(config, textSkylabLWP_PFA, "PFA");
-    SaveTextCtrl(config, textSkylabLWP_YSMAX, "YSMAX");
-    SaveTextCtrl(config, textSkylabLWP_DTOPT, "DTOPT");
-    SaveTextCtrl(config, textSkylabLWP_RINS, "RINS");
-    SaveTextCtrl(config, textSkylabLWP_VINS, "VINS");
-    SaveTextCtrl(config, textSkylabLWP_GAMINS, "GAMINS");
-    SaveComboBox(config, comboSkylabLWP_NEGTIV, "NEGTIV");
-    SaveTextCtrl(config, textSkylabLWP_WRAP, "WRAP");
-    SaveTextCtrl(config, textSkylabLWP_DTOPEN, "DTOPEN");
-    SaveTextCtrl(config, textSkylabLWP_DTCLOSE, "DTCLOSE");
-    SaveComboBox(config, comboSkylabLWP_IR, "IR");
-    SaveTextCtrl(config, textSkylabLWP_TLO, "TLO");
-    SaveTextCtrl(config, textSkylabLWP_MI, "MI");
-    SaveTextCtrl(config, textSkylabLWP_MF, "MF");
-    SaveTextCtrl(config, textSkylabLWP_DTSEP, "DTSEOP");
-    SaveTextCtrl(config, textSkylabLWP_DVSEP, "DVSEP");
-    SaveTextCtrl(config, textSkylabLWP_DVWO, "DVWO");
-    SaveTextCtrl(config, textSkylabLWP_DVWC, "DVWC");
+    for (unsigned i = 0; i < textCtrlData.size(); i++)
+    {
+        SaveTextCtrl(config, textCtrlData[i].text, textCtrlData[i].name);
+    }
+    for (unsigned i = 0; i < choiceData.size(); i++)
+    {
+        SaveChoiceBox(config, choiceData[i].choice, choiceData[i].name);
+    }
+    for (unsigned i = 0; i < checkBoxData.size(); i++)
+    {
+        SaveCheckBox(config, checkBoxData[i].checkBox, checkBoxData[i].name);
+    }
 
     delete config;
 
@@ -1417,61 +1948,18 @@ void FDSFrame::OnButton_Load(wxCommandEvent& event)
         return;
     }
 
-    config->SetPath("/Config");
-    LoadComboBox(config, comboWorld, "World");
-    LoadTextCtrl(config, textYear, "Year");
-    LoadTextCtrl(config, textMonth, "Month");
-    LoadTextCtrl(config, textDay, "Day");
-    LoadTextCtrl(config, textDayOfYear, "DOY");
-
-    config->SetPath("/LWP");
-    LoadTextCtrl(config, textLWPTargetVector, "TargetVector");
-    LoadTextCtrl(config, textLWPCKFactor, "CKFactor");
-    LoadTextCtrl(config, textLWPCArea, "CArea");
-    LoadTextCtrl(config, textLWPCWHT, "CWHT");
-    LoadComboBox(config, comboLWPLW, "LW");
-    LoadComboBox(config, comboLWPNS, "NS");
-    LoadTextCtrl(config, textLWPDay, "LWPDay");
-    LoadComboBox(config, comboLWP_LPT, "LPT");
-    LoadTextCtrl(config, textLWP_TSTART, "TSTART");
-    LoadTextCtrl(config, textLWP_TEND, "TEND");
-    LoadTextCtrl(config, textLWP_TSTEP, "TSTEP");
-    LoadComboBox(config, comboLWP_STABLE, "STABLE");
-    LoadTextCtrl(config, textLWP_STARS, "STARS");
-    LoadTextCtrl(config, textLWP_STARE, "STARE");
-    LoadTextCtrl(config, textLWP_LATLS, "LATLS");
-    LoadTextCtrl(config, textLWP_LONGLS, "LONGLS");
-    LoadTextCtrl(config, textLWP_PFT, "PFT");
-    LoadTextCtrl(config, textLWP_PFA, "PFA");
-    LoadTextCtrl(config, textLWP_YSMAX, "YSMAX");
-    LoadTextCtrl(config, textLWP_DTOPT, "DTOPT");
-    LoadTextCtrl(config, textLWP_DTGRR, "DTGRR");
-    LoadTextCtrl(config, textLWP_RINS, "RINS");
-    LoadTextCtrl(config, textLWP_VINS, "VINS");
-    LoadTextCtrl(config, textLWP_GAMINS, "GAMINS");
-    LoadComboBox(config, comboLWP_LOT, "LOT");
-    LoadTextCtrl(config, textLWP_GMTLOR, "GMTLOR");
-    LoadTextCtrl(config, textLWP_OFFSET, "OFFSET");
-    LoadTextCtrl(config, textLWP_BIAS, "BIAS");
-    LoadTextCtrl(config, textLWP_TPLANE, "TPLANE");
-    LoadTextCtrl(config, textLWP_TRANS, "TRANS");
-    LoadComboBox(config, comboLWP_INSCO, "INSCO");
-    LoadTextCtrl(config, textLWP_DHW, "DHW");
-    LoadTextCtrl(config, textLWP_DU, "DU");
-    LoadTextCtrl(config, textLWP_ANOM, "ANOM");
-    LoadComboBox(config, comboLWP_DELNOF, "DELNOF");
-    LoadTextCtrl(config, textLWP_DELNO, "DELNO");
-    LoadComboBox(config, comboLWP_NEGTIV, "NEGTIV");
-    LoadTextCtrl(config, textLWP_WRAP, "WRAP");
-
-    config->SetPath("/OMP");
-    LoadTextCtrl(config, textOMP_GMTLO, "GMTLO");
-    LoadTextCtrl(config, textOMP_Chaser, "Chaser");
-    LoadTextCtrl(config, textOMP_Target, "Target");
-    LoadTextCtrl(config, textOMP_MCT, "MCT");
-
-    config->SetPath("/SkylabLWP");
-    LoadTextCtrl(config, textSkylabLWP_TargetVector, "TargetVector");
+    for (unsigned i = 0; i < textCtrlData.size(); i++)
+    {
+        LoadTextCtrl(config, textCtrlData[i].text, textCtrlData[i].name);
+    }
+    for (unsigned i = 0; i < choiceData.size(); i++)
+    {
+        LoadChoiceBox(config, choiceData[i].choice, choiceData[i].name);
+    }
+    for (unsigned i = 0; i < checkBoxData.size(); i++)
+    {
+        LoadCheckBox(config, checkBoxData[i].checkBox, checkBoxData[i].name);
+    }
 
     delete config;
 
@@ -1489,7 +1977,7 @@ void FDSFrame::OnPageChanged(wxBookCtrlEvent& event)
 {
    int val = event.GetSelection();
 
-   if (val == 4)
+   if (val == 5)
    {
        ReloadStateVectorPage();
    }
@@ -1581,7 +2069,7 @@ void FDSFrame::OnButton_StateVector_Save(wxCommandEvent& event)
 
     file.Clear();
 
-    file.AddLine(comboStateVectorCoordinateSystem->GetValue());
+    file.AddLine(comboStateVectorCoordinateSystem->GetStringSelection());
     for (int i = 0; i < textStateVectorData->GetNumberOfLines(); i++)
     {
         file.AddLine(textStateVectorData->GetLineText(i));
@@ -1664,13 +2152,17 @@ int FDSFrame::ParseStateVectorFile(wxTextFile* file)
     {
         coord = 2;
     }
-    else if (line == "TLE")
+    else if (line == "M50")
     {
         coord = 3;
     }
+    else if (line == "TLE")
+    {
+        coord = 4;
+    }
     else return 2;
 
-    if (coord < 3)
+    if (coord < 4)
     {
         // Line 2-4: State Vector
         sv[0] = file->GetNextLine();
@@ -1696,7 +2188,7 @@ int FDSFrame::ParseStateVectorFile(wxTextFile* file)
     textStateVectorData->Clear();
     textStateVectorData->AppendText(sv[0]);
     textStateVectorData->AppendText("\n" + sv[1]);
-    if (coord < 3) textStateVectorData->AppendText("\n" + sv[2]);
+    if (coord < 4) textStateVectorData->AppendText("\n" + sv[2]);
     textStateVectorWeight->Clear();
     textStateVectorWeight->AppendText(sv[3]);
     textStateVectorArea->Clear();
@@ -1731,9 +2223,14 @@ void FDSFrame::UpdateOrbitData()
         coord = 2;
         required_lines = 7;
     }
-    else if (str == "TLE")
+    else if (str == "M50")
     {
         coord = 3;
+        required_lines = 7;
+    }
+    else if (str == "TLE")
+    {
+        coord = 4;
         required_lines = 6;
     }
 
@@ -1753,9 +2250,9 @@ void FDSFrame::UpdateOrbitData()
 
     textStateVectorOrbitData->AppendText("Coordinate system: " + str + "\n");
 
-    if (coord <= 2)
+    if (coord <= 3)
     {
-        //TEG and J2000
+        //TEG, J2000 and M50
         str = textStateVectorData->GetLineText(0);
         textStateVectorOrbitData->AppendText("Position vector: " + str + "\n");
 
@@ -1796,9 +2293,6 @@ void FDSFrame::UpdateOrbitData()
     str = textStateVectorKFactor->GetLineText(0);
     textStateVectorOrbitData->AppendText("Drag multiplier: " + str + "\n");
 
-    //Age of state vector
-    if (SetConstants()) return;
-
     str = textStateVectorFileName->GetLineText(0);
 
     double age;
@@ -1822,63 +2316,184 @@ int FDSFrame::SetConstants()
         core = new Core();
     }
 
-    std::string inputs[3];
-
-    inputs[0] = StringFromTextBox(textYear);
-    inputs[1] = StringFromTextBox(textMonth);
-    inputs[2] = StringFromTextBox(textDay);
-
     int Year, Month, Day;
 
-    Year = std::stoi(inputs[0]);
-    Month = std::stoi(inputs[1]);
-    Day = std::stoi(inputs[2]);
+    textDayOfYear->ChangeValue("Invalid date!");
 
-    return core->SetConstants(comboWorld->GetSelection(), Year, Month, Day);
+    if (GetInteger(textYear, "Year", &Year)) return 1;
+    if (GetInteger(textMonth, "Month", &Month)) return 1;
+    if (GetInteger(textDay, "Day", &Day)) return 1;
+
+    if (core->SetConstants(comboWorld->GetSelection(), Year, Month, Day))
+    {
+        SetStatusText("Error during initialization!");
+        return 1;
+    }
+
+    int DOY = core->GetDayOfYear();
+
+    wxString mystring = wxString::Format(wxT("%i"), DOY);
+    textDayOfYear->ChangeValue(mystring);
+
+    SetStatusText("Initialization successful!");
+
+    return 0;
+}
+
+int FDSFrame::GetInteger(wxTextCtrl* text, const wxString& name, int* val)
+{
+    if (text->GetValue().ToInt(val) == false)
+    {
+        SetStatusText(name + " has invalid format!");
+        return 1;
+    }
+    return 0;
+}
+
+int FDSFrame::GetDouble(wxTextCtrl* text, const wxString& name, double* val)
+{
+    if (text->GetValue().ToDouble(val) == false)
+    {
+        SetStatusText(name + " has invalid format!");
+        return 1;
+    }
+    return 0;
+}
+
+int FDSFrame::GetDDDHHMMSS(wxTextCtrl* text, const wxString& name, double* val)
+{
+    wxStringTokenizer tkz(text->GetValue(), ":");
+
+    if (tkz.CountTokens() != 4)
+    {
+        SetStatusText(name + " has invalid format!");
+        return 1;
+    }
+
+    int itemp, days, hours, minutes, i;
+    double dtemp, seconds, sgn;
+    bool err;
+
+    sgn = 1.0;
+    itemp = days = hours = minutes = i = 0;
+    dtemp = seconds = 0.0;
+    err = false;
+
+    while (tkz.HasMoreTokens())
+    {
+        wxString token = tkz.GetNextToken();
+
+        if (i < 3)
+        {
+            err = !token.ToInt(&itemp);
+        }
+        else
+        {
+            err = !token.ToDouble(&dtemp);
+        }
+
+        if (err)
+        {
+            SetStatusText(name + " has invalid format!");
+            return 1;
+        }
+
+        switch (i)
+        {
+        case 0:
+            days = abs(itemp);
+            if (token[0] == '-') sgn = -1.0;
+            break;
+        case 1:
+            hours = itemp;
+            break;
+        case 2:
+            minutes = itemp;
+            break;
+        case 3:
+            seconds = dtemp;
+            break;
+        }
+
+        i++;
+    }
+
+    *val = sgn * (seconds + (double)(60 * (minutes + 60 * (hours + 24 * days))));
+    return 0;
+}
+
+int FDSFrame::GetHHMMSS(wxTextCtrl* text, const wxString& name, double* val)
+{
+    double sgn, secs;
+    int vals[2];
+
+    if (ParseTime(text, 3, sgn, vals, &secs))
+    {
+        SetStatusText(name + " has invalid format!");
+        return 1;
+    }
+
+    *val = sgn * (secs + (double)(60 * (vals[1] + 60 * vals[0])));
+    return 0;
+}
+
+int FDSFrame::ParseTime(wxTextCtrl* text, size_t size, double& sgn, int* vals, double* secs)
+{
+    wxStringTokenizer tkz(text->GetValue(), ":");
+
+    if (tkz.CountTokens() != size) return 1;
+
+    wxArrayString strings;
+
+    strings.resize(size);
+
+    for (size_t i = 0; i < size; i++)
+    {
+        strings[i] = tkz.GetNextToken();
+    }
+
+    // Convert to int and double
+    for (size_t i = 0; i < size; i++)
+    {
+        if ((i + 1) < size)
+        {
+            // Not last
+            if (strings[i].ToInt(&vals[i]) == false) return 1;
+        }
+        else
+        {
+            // Last
+            if (strings[i].ToDouble(secs) == false) return 1;
+        }
+
+        if (i == 0)
+        {
+            // First
+            if (strings[0][0] == '-')
+            {
+                sgn = -1.0;
+                vals[0] = abs(vals[0]);
+            }
+            else
+            {
+                sgn = 1.0;
+            }
+        }
+    }
+
+    return 0;
 }
 
 void FDSFrame::CalculateDayOfYear(wxCommandEvent& event)
 {
-    if (core == NULL)
-    {
-        core = new Core();
-    }
-
-    std::string inputs[3];
-
-    inputs[0] = StringFromTextBox(textYear);
-    inputs[1] = StringFromTextBox(textMonth);
-    inputs[2] = StringFromTextBox(textDay);
-
-    int Year, Month, Day, DOY;
-
-    try
-    {
-        Year = std::stoi(inputs[0]);
-        Month = std::stoi(inputs[1]);
-        Day = std::stoi(inputs[2]);
-    }
-    catch (std::invalid_argument)
-    {
-        textDayOfYear->ChangeValue("Invalid date!");
-        return;
-    }
-
-    if (core->CalculateDayOfYear(Year, Month, Day, DOY))
-    {
-        textDayOfYear->ChangeValue("Invalid date!");
-        return;
-    }
-
-    wxString mystring = wxString::Format(wxT("%i"), DOY);
-    textDayOfYear->ChangeValue(mystring);
+    SetConstants();
 }
 
 void FDSFrame::OnButton_LWP_LVDC_Export(wxCommandEvent& event)
 {
-    if (core == NULL)
+    if (core->IsInitialized() == false)
     {
-        SetStatusText("Launch day not initialized!");
+        SetStatusText("Date not initialized!");
         return;
     }
 
@@ -1893,9 +2508,9 @@ void FDSFrame::OnButton_LWP_LVDC_Export(wxCommandEvent& event)
 
 void FDSFrame::OnButton_LWP_SSV_Export(wxCommandEvent& event)
 {
-    if (core == NULL)
+    if (core->IsInitialized() == false)
     {
-        SetStatusText("Launch day not initialized!");
+        SetStatusText("Date not initialized!");
         return;
     }
 
@@ -1931,7 +2546,16 @@ void FDSFrame::OnButton_View_MCT(wxCommandEvent& event)
     wxString arr, token;
     wxStringTokenizer tkz;
     unsigned i, j;
-   
+
+    // Delete all old lines
+    for (i = 0; i < 40; i++)
+    {
+        for (j = 0; j < 13; j++)
+        {
+            textOMP_MCT_Editor->SetCellValue(i, j, "");
+        }
+    }
+
     for (i = 0; i < file.GetLineCount(); i++)
     {
         tkz.SetString(file[i], ";");
@@ -2026,11 +2650,27 @@ void FDSFrame::OnButton_Save_MCT(wxCommandEvent& event)
 
 void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)
 {
-    if (core == NULL)
+    if (core->IsInitialized() == false)
     {
-        SetStatusText("Launch day not initialized!");
+        SetStatusText("Date not initialized!");
         return;
     }
+
+    // Ask for Shuttle name input
+    wxTextEntryDialog dialog1(this, "Enter the name of the Shuttle:", "Shuttle vessel name input", wxEmptyString, wxOK | wxCANCEL);
+    if (dialog1.ShowModal() != wxID_OK)
+    {
+        return;
+    }
+    wxString ShuttleName = dialog1.GetValue();
+
+    // Ask for Target name input
+    wxTextEntryDialog dialog2(this, "Enter the name of the target:", "Target vessel name input", wxEmptyString, wxOK | wxCANCEL);
+    if (dialog2.ShowModal() != wxID_OK)
+    {
+        return;
+    }
+    wxString TargetName = dialog2.GetValue();
 
     wxString str = textOMP_MCT->GetLineText(0);
     wxString project = textProjectFile->GetLineText(0);
@@ -2062,14 +2702,21 @@ void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)
         return;
     }
 
+    // Read GMTLO from OMP input
+    double GMTLO, hh, mm, ss;
+    if (GetHHMMSS(textOMP_GMTLO, "GMTLO", &GMTLO)) return;
+    OrbMech::SS2HHMMSS(GMTLO, hh, mm, ss);
+
     std::string line;
     std::vector<std::string> array;
 
     array.push_back("LAUNCHDATE0 " + std::to_string(core->GetSessionConstants()->Year));
     array.push_back("LAUNCHDATE1 " + std::to_string(core->GetSessionConstants()->DayOfYear));
-    array.push_back("LAUNCHDATE2 " + std::to_string(core->GetSessionConstants()->Hours));
-    array.push_back("LAUNCHDATE3 " + std::to_string(core->GetSessionConstants()->Minutes));
-    array.push_back("LAUNCHDATE4 " + std::to_string(core->GetSessionConstants()->launchdateSec));
+    array.push_back("LAUNCHDATE2 " + std::to_string((int)(hh)));
+    array.push_back("LAUNCHDATE3 " + std::to_string((int)(mm)));
+    array.push_back("LAUNCHDATE4 " + std::to_string(ss));
+    array.push_back("SHUTTLE " + ShuttleName.ToStdString());
+    array.push_back("TARGET " + TargetName.ToStdString());
     array.push_back("NONSPHERICAL 1");
     array.push_back("START_MCT");
     for (unsigned i = 0; i < tab_out.size(); i++)
@@ -2135,4 +2782,254 @@ void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)
     file.Close();
 
     SetStatusText("File export successful!");
+}
+
+void FDSFrame::OnCombo_ShuttleLWP_Launchpad(wxCommandEvent& event)
+{
+    switch (comboShuttleLWP_Launchpad->GetSelection())
+    {
+    case 0: // LC-39A
+        textShuttleLWP_LATLS->Clear();
+        textShuttleLWP_LATLS->AppendText("28.608385");
+        textShuttleLWP_LONGLS->Clear();
+        textShuttleLWP_LONGLS->AppendText("279.395928");
+        break;
+    case 1: // LC-39B
+        textShuttleLWP_LATLS->Clear();
+        textShuttleLWP_LATLS->AppendText("28.627215");
+        textShuttleLWP_LONGLS->Clear();
+        textShuttleLWP_LONGLS->AppendText("279.379138");
+        break;
+    case 2: // SLC-6
+        textShuttleLWP_LATLS->Clear();
+        textShuttleLWP_LATLS->AppendText("34.5808470");
+        textShuttleLWP_LONGLS->Clear();
+        textShuttleLWP_LONGLS->AppendText("239.37405");
+        break;
+    }
+}
+
+void FDSFrame::OnButton_ShuttleLWP_LWP_Execute(wxCommandEvent& event)
+{
+    ShuttleLWP_Execute(true);
+}
+
+void FDSFrame::OnButton_ShuttleLWP_LTP_Execute(wxCommandEvent& event)
+{
+    ShuttleLWP_Execute(false);
+}
+
+void FDSFrame::ShuttleLWP_Execute(bool IsLW)
+{
+    std::string strInputs[20];
+    double dInputs[40];
+    int iInputs[20], RefSet;
+
+    if (IsLW)
+    {
+        if (GetInteger(textShuttleLWP_LW_Ref_Set_ID, "Ref Set", &RefSet)) return;
+    }
+    else
+    {
+        if (GetInteger(textShuttleLWP_LT_Ref_Set_ID, "Ref Set", &RefSet)) return;
+    }
+    
+    if (RefSet < 1 || RefSet > 4)
+    {
+        SetStatusText("Invalid ref set number");
+        return;
+    }
+    RefSet -= 1;
+
+    strInputs[0] = StringFromTextBox(textProjectFile);
+    strInputs[1] = StringFromTextBox(textShuttleLWPTargetVector);
+
+    if (GetDouble(textShuttleLWP_YSMAX, "YSMAX", &dInputs[0])) return;
+    if (GetDouble(textShuttleLWP_CD, "CD", &dInputs[1])) return;
+    if (GetDouble(textShuttleLWP_Area, "Area", &dInputs[2])) return;
+    if (GetDouble(textShuttleLWP_Weight, "Weight", &dInputs[3])) return;
+    if (GetDouble(textShuttleLWP_LATLS, "LATLS", &dInputs[4])) return;
+    if (GetDouble(textShuttleLWP_LONGLS, "LONGLS", &dInputs[5])) return;
+    if (GetDouble(text_ShuttleLWP_PFA, "PFA", &dInputs[6])) return;
+    if (GetDDDHHMMSS(text_ShuttleLWP_PFT, "PFT", &dInputs[7])) return;
+    if (GetDouble(text_ShuttleLWP_RAD, "RAD", &dInputs[8])) return;
+    if (GetDouble(text_ShuttleLWP_VEL, "VEL", &dInputs[9])) return;
+    if (GetDouble(text_ShuttleLWP_FPA, "FPA", &dInputs[10])) return;
+    if (GetDDDHHMMSS(text_ShuttleLWP_OPT, "OPT", &dInputs[11])) return;
+    if (GetDouble(textShuttleLWP_ET_Area, "ET Area", &dInputs[12])) return;
+    if (GetDouble(textShuttleLWP_ET_CD, "ET CD", &dInputs[13])) return;
+    if (GetDouble(textShuttleLWP_ET_WT, "ET Weight", &dInputs[14])) return;
+    if (GetDDDHHMMSS(textShuttleLWP_ET_Sep_DTIG, "ET Sep DTIG", &dInputs[15])) return;
+    if (GetDouble(textShuttleLWP_ET_Sep_DVX, "ET Sep DVX", &dInputs[16])) return;
+    if (GetDouble(textShuttleLWP_ET_Sep_DVY, "ET Sep DVY", &dInputs[17])) return;
+    if (GetDouble(textShuttleLWP_ET_Sep_DVZ, "ET Sep DVZ", &dInputs[18])) return;
+    if (GetDDDHHMMSS(text_ShuttleLWP_DTO, "DTO", &dInputs[19])) return;
+    if (GetDDDHHMMSS(text_ShuttleLWP_DTC, "DTC", &dInputs[20])) return;
+
+    if (GetDDDHHMMSS(textShuttleLWP_OMS1_DTIG[RefSet], "OMS-1 DTIG", &dInputs[21])) return;
+    if (GetDouble(textShuttleLWP_OMS1_C1[RefSet], "OMS-1 C1", &dInputs[22])) return;
+    if (GetDouble(textShuttleLWP_OMS1_C2[RefSet], "OMS-1 C2", &dInputs[23])) return;
+    if (GetDouble(textShuttleLWP_OMS1_HT[RefSet], "OMS-1 HT", &dInputs[24])) return;
+    if (GetDouble(textShuttleLWP_OMS1_THETAT[RefSet], "OMS-1 THETAT", &dInputs[25])) return;
+
+    if (GetDDDHHMMSS(textShuttleLWP_OMS2_DTIG[RefSet], "OMS-2 DTIG", &dInputs[26])) return;
+    if (GetDouble(textShuttleLWP_OMS2_C1[RefSet], "OMS-2 C1", &dInputs[27])) return;
+    if (GetDouble(textShuttleLWP_OMS2_C2[RefSet], "OMS-2 C2", &dInputs[28])) return;
+    if (GetDouble(textShuttleLWP_OMS2_HT[RefSet], "OMS-2 HT", &dInputs[29])) return;
+    if (GetDouble(textShuttleLWP_OMS2_THETAT[RefSet], "OMS-2 THETAT", &dInputs[30])) return;
+
+    if (GetDDDHHMMSS(textShuttleLWP_MPS_Dump_DTIG, "MPS Dump DTIG", &dInputs[34])) return;
+    if (GetDouble(textShuttleLWP_MPS_Dump_DVX, "MPS Dump DVX", &dInputs[35])) return;
+    if (GetDouble(textShuttleLWP_MPS_Dump_DVY, "MPS Dump DVY", &dInputs[36])) return;
+    if (GetDouble(textShuttleLWP_MPS_Dump_DVZ, "MPS Dump DVZ", &dInputs[37])) return;
+
+    iInputs[0] = checkShuttleLWP_DI->IsChecked();
+    iInputs[1] = checkShuttleLWP_LAUNCH_AZ_DIR_FLAG->IsChecked();
+    iInputs[2] = comboShuttleLWP_PhaseCntrlFlag->GetSelection();
+    if (GetInteger(textShuttleLWP_WRAP_FLAG, "WRAP FLAG", &iInputs[3])) return;
+    iInputs[6] = checkShuttleLWP_Drag->IsChecked();
+
+    if (IsLW)
+    {
+        if (textShuttleLWP_Desired_Phase_1->IsEmpty())
+        {
+            iInputs[4] = 0;
+        }
+        else
+        {
+            iInputs[4] = 1;
+            if (GetDouble(textShuttleLWP_Desired_Phase_1, "PHASE1", &dInputs[31])) return;
+        }
+
+        if (textShuttleLWP_Desired_Phase_2->IsEmpty())
+        {
+            iInputs[5] = 0;
+        }
+        else
+        {
+            iInputs[5] = 1;
+            if (GetDouble(textShuttleLWP_Desired_Phase_2, "PHASE2", &dInputs[32])) return;
+        }
+    }
+    else
+    {
+        if (GetHHMMSS(textShuttleLWP_LT_GMTLO, "GMTLO", &dInputs[33])) return;
+    }
+
+    std::vector<std::string> data;
+
+    int err = core->RunShuttleLWP(IsLW, strInputs, dInputs, iInputs, data);
+
+    if (err)
+    {
+        wxString Output;
+        Output << "Shuttle LWP error code " << err;
+
+        SetStatusText(Output);
+        return;
+    }
+
+    SetStatusText("Shuttle LWP success!");
+
+    if (IsLW)
+    {
+        for (unsigned i = 0; i < data.size(); i++)
+        {
+            textShuttleLWP_LW_Out[i]->Clear();
+            textShuttleLWP_LW_Out[i]->AppendText(data[i]);
+        }
+    }
+    else
+    {
+        for (unsigned i = 0; i < data.size(); i++)
+        {
+            textShuttleLWP_LT_Out[i]->Clear();
+            textShuttleLWP_LT_Out[i]->AppendText(data[i]);
+        }
+    }
+}
+
+void FDSFrame::OnButton_ShuttleLWP_Export(wxCommandEvent& event)
+{
+    if (core->ShuttleLTPExport())
+    {
+        SetStatusText("Shuttle LWP export failed!");
+        return;
+    }
+
+    SetStatusText("Shuttle LWP export success!");
+}
+
+void FDSFrame::OnButtonShuttleLWPSaveStateVector(wxCommandEvent& event)
+{
+    if (core->IsInitialized() == false)
+    {
+        SetStatusText("Date not initialized!");
+        return;
+    }
+
+    wxTextEntryDialog dialog(this, "Enter name for the file:", "LTP post MPS dump state vector file", "LTP.txt", wxOK | wxCANCEL);
+
+    if (dialog.ShowModal() == wxID_OK)
+    {
+        wxString str = dialog.GetValue();
+        wxString project = textProjectFile->GetLineText(0);
+        wxString path = "Projects/" + project + "/State Vectors/";
+        wxString filepath = path + str;
+
+        //Save file
+        wxTextFile file(filepath);
+
+        if (file.Exists())
+        {
+            wxMessageDialog dialog(NULL, wxT("The file already exists. Overwrite?"),
+                wxT("Save file"),
+                wxNO_DEFAULT | wxYES_NO);
+
+            switch (dialog.ShowModal())
+            {
+            case wxID_YES:
+                break;
+            default:
+                return;
+            }
+        }
+        else
+        {
+            file.Create();
+        }
+        file.Close();
+
+        core->SaveShuttleLWPStateVector(str.ToStdString());
+    }
+}
+
+void FDSFrame::Add(wxTextCtrl* text, const wxString& config)
+{
+    wxTextCtrlData data;
+
+    data.text = text;
+    data.name = config;
+
+    textCtrlData.push_back(data);
+}
+
+void FDSFrame::Add(wxChoice* choice, const wxString& config)
+{
+    wxChoiceData data;
+
+    data.choice = choice;
+    data.name = config;
+
+    choiceData.push_back(data);
+}
+
+void FDSFrame::Add(wxCheckBox* choice, const wxString& config)
+{
+    wxCheckBoxData data;
+
+    data.checkBox = choice;
+    data.name = config;
+
+    checkBoxData.push_back(data);
 }

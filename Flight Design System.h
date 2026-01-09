@@ -21,6 +21,7 @@ program. If not, see <https://www.gnu.org/licenses/>.
 #include <wx/bookctrl.h>
 #include <wx/listctrl.h>
 #include <wx/grid.h>
+#include <vector>
 
 class Core;
 class wxTextFile;
@@ -58,10 +59,34 @@ public:
     void OnButton_View_MCT(wxCommandEvent& event);
     void OnButton_Save_MCT(wxCommandEvent& event);
     void OnButton_FDOMFD_Export(wxCommandEvent& event);
+    void OnCombo_ShuttleLWP_Launchpad(wxCommandEvent& event);
+    void OnButton_ShuttleLWP_LWP_Execute(wxCommandEvent& event);
+    void OnButton_ShuttleLWP_LTP_Execute(wxCommandEvent& event);
+    void OnButton_ShuttleLWP_Export(wxCommandEvent& event);
+    void OnButtonShuttleLWPSaveStateVector(wxCommandEvent& event);
 private:
+
+    struct wxTextCtrlData
+    {
+        wxTextCtrl* text;
+        wxString name;
+    };
+
+    struct wxChoiceData
+    {
+        wxChoice* choice;
+        wxString name;
+    };
+
+    struct wxCheckBoxData
+    {
+        wxCheckBox* checkBox;
+        wxString name;
+    };
 
     void AddConfigPage();
     void AddLWPPage();
+    void AddShuttleLWPPage();
     void AddOMPPage();
     void AddSkylabLWPPage();
     void AddStateVectorPage();
@@ -70,16 +95,31 @@ private:
     int ParseStateVectorFile(wxTextFile* file);
     void UpdateOrbitData();
     int SetConstants();
+    void ShuttleLWP_Execute(bool IsLW);
 
+    // Text parsing
+    int GetInteger(wxTextCtrl* text, const wxString& name, int* val);
+    int GetDouble(wxTextCtrl* text, const wxString& name, double* val);
+    int GetDDDHHMMSS(wxTextCtrl* text, const wxString& name, double* val);
+    int GetHHMMSS(wxTextCtrl* text, const wxString& name, double* val);
+    int ParseTime(wxTextCtrl* text, size_t size, double& sgn, int* vals, double* secs);
+
+    // For save/loading
+    void Add(wxTextCtrl* text, const wxString& config);
+    void Add(wxChoice* choice, const wxString& config);
+    void Add(wxCheckBox* choice, const wxString& config);
+
+    wxNotebook* notebook;
     wxPanel* panel1;
     wxPanel* panel2;
     wxPanel* panel3;
     wxPanel* panel4;
     wxPanel* panel5;
+    wxNotebook* nb_ShuttleLWP;
 
     //Config page
     wxTextCtrl* textProjectFile;
-    wxComboBox* comboWorld;
+    wxChoice* comboWorld;
     wxTextCtrl* textYear;
     wxTextCtrl* textMonth;
     wxTextCtrl* textDay;
@@ -90,14 +130,14 @@ private:
     wxTextCtrl* textLWPCKFactor;
     wxTextCtrl* textLWPCArea;
     wxTextCtrl* textLWPCWHT;
-    wxComboBox* comboLWPLW;
-    wxComboBox* comboLWPNS;
+    wxChoice* comboLWPLW;
+    wxChoice* comboLWPNS;
     wxTextCtrl* textLWPDay;
-    wxComboBox* comboLWP_LPT;
+    wxChoice* comboLWP_LPT;
     wxTextCtrl* textLWP_TSTART;
     wxTextCtrl* textLWP_TEND;
     wxTextCtrl* textLWP_TSTEP;
-    wxComboBox* comboLWP_STABLE;
+    wxChoice* comboLWP_STABLE;
     wxTextCtrl* textLWP_STARS;
     wxTextCtrl* textLWP_STARE;
     wxTextCtrl* textLWP_LATLS;
@@ -110,21 +150,80 @@ private:
     wxTextCtrl* textLWP_RINS;
     wxTextCtrl* textLWP_VINS;
     wxTextCtrl* textLWP_GAMINS;
-    wxComboBox* comboLWP_LOT;
+    wxChoice* comboLWP_LOT;
     wxTextCtrl* textLWP_GMTLOR;
     wxTextCtrl* textLWP_OFFSET;
     wxTextCtrl* textLWP_BIAS;
     wxTextCtrl* textLWP_TPLANE;
     wxTextCtrl* textLWP_TRANS;
-    wxComboBox* comboLWP_INSCO;
+    wxChoice* comboLWP_INSCO;
     wxTextCtrl* textLWP_DHW;
     wxTextCtrl* textLWP_DU;
     wxTextCtrl* textLWP_ANOM;
-    wxComboBox* comboLWP_DELNOF;
+    wxChoice* comboLWP_DELNOF;
     wxTextCtrl* textLWP_DELNO;
-    wxComboBox* comboLWP_NEGTIV;
+    wxChoice* comboLWP_NEGTIV;
     wxTextCtrl* textLWP_WRAP;
     wxTextCtrl* textLWP_Actual_GMTLO;
+
+    //Shuttle LWP init page
+    wxTextCtrl* textShuttleLWPTargetVector;
+    wxTextCtrl* textShuttleLWP_YSMAX;
+    wxCheckBox* checkShuttleLWP_DI;
+    wxTextCtrl* textShuttleLWP_CD;
+    wxTextCtrl* textShuttleLWP_Area;
+    wxTextCtrl* textShuttleLWP_Weight;
+    wxChoice* comboShuttleLWP_Launchpad;
+    wxTextCtrl* textShuttleLWP_LATLS;
+    wxTextCtrl* textShuttleLWP_LONGLS;
+    wxTextCtrl* textShuttleLWP_ET_Area;
+    wxTextCtrl* textShuttleLWP_ET_CD;
+    wxTextCtrl* textShuttleLWP_ET_WT;
+    wxTextCtrl* textShuttleLWP_MPS_Dump_DVX;
+    wxTextCtrl* textShuttleLWP_MPS_Dump_DVY;
+    wxTextCtrl* textShuttleLWP_MPS_Dump_DVZ;
+    wxTextCtrl* textShuttleLWP_MPS_Dump_DTIG;
+    wxTextCtrl* text_ShuttleLWP_PFA;
+    wxTextCtrl* text_ShuttleLWP_PFT;
+    wxTextCtrl* text_ShuttleLWP_RAD;
+    wxTextCtrl* text_ShuttleLWP_VEL;
+    wxTextCtrl* text_ShuttleLWP_FPA;
+    wxTextCtrl* text_ShuttleLWP_OPT;
+    wxTextCtrl* text_ShuttleLWP_DTO;
+    wxTextCtrl* text_ShuttleLWP_DTC;
+    wxTextCtrl* textShuttleLWP_ET_Sep_DVX;
+    wxTextCtrl* textShuttleLWP_ET_Sep_DVY;
+    wxTextCtrl* textShuttleLWP_ET_Sep_DVZ;
+    wxTextCtrl* textShuttleLWP_ET_Sep_DTIG;
+    wxChoice* comboShuttleLWP_PhaseCntrlFlag;
+    wxTextCtrl* textShuttleLWP_WRAP_FLAG;
+    wxCheckBox* checkShuttleLWP_LAUNCH_AZ_DIR_FLAG;
+
+    // Shuttle LWP constants page
+    wxCheckBox* checkShuttleLWP_Drag;
+
+    //Shuttle LWP lnch ref sets page
+    wxTextCtrl* textShuttleLWP_OMS1_DTIG[4];
+    wxTextCtrl* textShuttleLWP_OMS1_C1[4];
+    wxTextCtrl* textShuttleLWP_OMS1_C2[4];
+    wxTextCtrl* textShuttleLWP_OMS1_HT[4];
+    wxTextCtrl* textShuttleLWP_OMS1_THETAT[4];
+    wxTextCtrl* textShuttleLWP_OMS2_DTIG[4];
+    wxTextCtrl* textShuttleLWP_OMS2_C1[4];
+    wxTextCtrl* textShuttleLWP_OMS2_C2[4];
+    wxTextCtrl* textShuttleLWP_OMS2_HT[4];
+    wxTextCtrl* textShuttleLWP_OMS2_THETAT[4];
+
+    // Shuttle LW execution page
+    wxTextCtrl* textShuttleLWP_LW_Ref_Set_ID;
+    wxTextCtrl* textShuttleLWP_Desired_Phase_1;
+    wxTextCtrl* textShuttleLWP_Desired_Phase_2;
+    wxTextCtrl* textShuttleLWP_LW_Out[10];
+
+    // Shuttle LT execution page
+    wxTextCtrl* textShuttleLWP_LT_GMTLO;
+    wxTextCtrl* textShuttleLWP_LT_Ref_Set_ID;
+    wxTextCtrl* textShuttleLWP_LT_Out[30];
 
     //OMP page
     wxTextCtrl* textOMP_GMTLO;
@@ -138,7 +237,7 @@ private:
     wxTextCtrl* textSkylabLWP_CKFactor;
     wxTextCtrl* textSkylabLWP_CArea;
     wxTextCtrl* textSkylabLWP_CWHT;
-    wxComboBox* comboSkylabLWP_NS;
+    wxChoice* comboSkylabLWP_NS;
     wxTextCtrl* textSkylabLWP_DAY;
     wxTextCtrl* textSkylabLWP_LATLS;
     wxTextCtrl* textSkylabLWP_LONGLS;
@@ -149,11 +248,11 @@ private:
     wxTextCtrl* textSkylabLWP_RINS;
     wxTextCtrl* textSkylabLWP_VINS;
     wxTextCtrl* textSkylabLWP_GAMINS;
-    wxComboBox* comboSkylabLWP_NEGTIV;
+    wxChoice* comboSkylabLWP_NEGTIV;
     wxTextCtrl* textSkylabLWP_WRAP;
     wxTextCtrl* textSkylabLWP_DTOPEN;
     wxTextCtrl* textSkylabLWP_DTCLOSE;
-    wxComboBox* comboSkylabLWP_IR;
+    wxChoice* comboSkylabLWP_IR;
     wxTextCtrl* textSkylabLWP_TLO;
     wxTextCtrl* textSkylabLWP_MI;
     wxTextCtrl* textSkylabLWP_MF;
@@ -165,7 +264,7 @@ private:
    //State Vector page
     wxListCtrl* StateVectorList;
     wxTextCtrl* textStateVectorFileName;
-    wxComboBox* comboStateVectorCoordinateSystem;
+    wxChoice* comboStateVectorCoordinateSystem;
     wxTextCtrl* textStateVectorData;
     wxTextCtrl* textStateVectorWeight;
     wxTextCtrl* textStateVectorArea;
@@ -173,6 +272,11 @@ private:
     wxTextCtrl* textStateVectorOrbitData;
 
     Core* core;
+
+    // Save data
+    std::vector<wxTextCtrlData> textCtrlData;
+    std::vector<wxChoiceData> choiceData;
+    std::vector<wxCheckBoxData> checkBoxData;
 
     DECLARE_EVENT_TABLE()
 };

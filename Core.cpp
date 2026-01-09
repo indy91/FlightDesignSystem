@@ -293,7 +293,7 @@ int Core::SaveLWPStateVector(std::string filename)
 {
 	if (PVTABC.GMT != 0.0)
 	{
-		SaveStateVector(ProjectFolder + "State Vectors/" + filename + ".txt", PVTABC);
+		SaveStateVector(ProjectFolder + "State Vectors/" + filename, PVTABC);
 		return 0;
 	}
 	return 1;
@@ -446,9 +446,17 @@ int Core::LWPExportForSSV()
 	out.R = mul(sescnst.M_TEG_TO_J2000, out.R);
 	out.V = mul(sescnst.M_TEG_TO_J2000, out.V);
 
+	// Calculate IY vector
+	VECTOR3 IY_TEG = unit(crossp(PVTABC.V, PVTABC.R));
+	VECTOR3 IY_M50 = mul(sescnst.M_TEG_TO_M50, IY_TEG);
+	MATRIX3 TEG_TO_EF = TEG_to_EF_Matrix(LWPSummaryTable.GMTLO);
+	VECTOR3 IY_EF = mul(TEG_TO_EF, IY_TEG);
+
 	//Write to file
 	sprintf_s(buf, "%04d-%02d-%02d", sescnst.Year, sescnst.Month, sescnst.Day);
-	myfile << "SSV Shuttle targeting for " << buf << std::endl << std::endl;
+	myfile << "SSV Shuttle targeting for " << buf << std::endl;
+	OrbMech::GMT2String4(buf, LWPSummaryTable.GMTLO);
+	myfile << "GMTLO = " << buf << std::endl << std::endl;
 
 	myfile << "MJD of T-9min:" << std::endl;
 	sprintf_s(buf, "%.9lf", MJDSCEN);
@@ -463,10 +471,363 @@ int Core::LWPExportForSSV()
 	myfile << buf << std::endl << std::endl;
 
 	sprintf_s(buf, "%.4lf", LWPSummaryTable.IIGM * OrbMech::DEG);
-	myfile << "Inclination (deg) " << buf << std::endl;
+	myfile << "Inclination (deg) " << buf << std::endl << std::endl;
+
+	myfile << "IY vector (Earth-fixed):" << std::endl;
+	sprintf_s(buf, "%.9lf %.9lf %.9lf", IY_EF.x, IY_EF.y, IY_EF.z);
+	myfile << buf << std::endl;
+
+	myfile << "IY vector (M50):" << std::endl;
+	sprintf_s(buf, "%.9lf %.9lf %.9lf", IY_M50.x, IY_M50.y, IY_M50.z);
+	myfile << buf << std::endl;
 
 	myfile.close();
 	return 0;
+}
+
+int Core::RunShuttleLWP(bool IsLW, std::string strInputs[], double* dInputs, int* iInputs, std::vector<std::string>& data)
+{
+	ShuttleLWP::ShuttleLWPInputs in;
+	bool UseDrag;
+
+	ProjectFolder = "Projects/" + strInputs[0] + "/";
+
+	if (LoadStateVector(ProjectFolder + "State Vectors/" + strInputs[1], in.sv_T)) return 1;
+
+	in.CCD = dInputs[1];
+	in.CAREA = dInputs[2] * pow(OrbMech::FT2M, 2);
+	in.CWHT = dInputs[3] * OrbMech::LBS;
+	in.LATLS = dInputs[4] * OrbMech::RAD;
+	in.LONGLS = dInputs[5] * OrbMech::RAD;
+	in.PFT = dInputs[7];
+	in.PFA = dInputs[6] * OrbMech::RAD;
+	in.YSMAX = dInputs[0] * OrbMech::RAD;
+	in.RINS = dInputs[8] * OrbMech::FT2M;
+	in.VINS = dInputs[9] * OrbMech::FT2M;
+	in.GAMINS = dInputs[10] * OrbMech::RAD;
+	in.DTOPT = dInputs[11];
+	in.DTO = dInputs[19];
+	in.DTC = dInputs[20];
+	in.OMS1.DTIG = dInputs[21];
+	in.OMS1.C1 = dInputs[22] * OrbMech::FT2M;
+	in.OMS1.C2 = dInputs[23];
+	in.OMS1.HTGT = dInputs[24] * OrbMech::NM;
+	in.OMS1.THETA = dInputs[25] * OrbMech::RAD;
+	in.OMS2.DTIG = dInputs[26];
+	in.OMS2.C1 = dInputs[27] * OrbMech::FT2M;
+	in.OMS2.C2 = dInputs[28];
+	in.OMS2.HTGT = dInputs[29] * OrbMech::NM;
+	in.OMS2.THETA = dInputs[30] * OrbMech::RAD;
+
+	in.DirectInsertion = (iInputs[0] == 1 ? true : false);
+	in.NS = iInputs[1] == 1 ? 0 : 1;
+	in.NEGTIV = iInputs[2];
+	in.WRAP = iInputs[3];
+	UseDrag = (iInputs[6] == 1 ? true : false);
+
+	if (IsLW)
+	{
+		if (iInputs[4])
+		{
+			in.OMS2Phase[0] = true;
+			in.OMS2PhaseAngle[0] = dInputs[31] * OrbMech::RAD;
+		}
+		else
+		{
+			in.OMS2Phase[0] = false;
+		}
+		if (iInputs[5])
+		{
+			in.OMS2Phase[1] = true;
+			in.OMS2PhaseAngle[1] = dInputs[32] * OrbMech::RAD;
+		}
+		else
+		{
+			in.OMS2Phase[1] = false;
+		}
+
+	}
+	else
+	{
+		in.GMTLO = dInputs[33];
+	}
+
+	// Other inputs
+	in.ET_Area = dInputs[12] * pow(OrbMech::FT2M, 2);
+	in.ET_CD = dInputs[13];
+	in.ET_Weight = dInputs[14] * OrbMech::LBS;
+	in.DTIG_ET_SEP = dInputs[15];
+	in.DV_ET_SEP = _V(dInputs[16], dInputs[17], dInputs[18]) * OrbMech::FT2M;
+	in.DTIG_MPS = dInputs[34];
+	in.DV_MPS = _V(dInputs[35], dInputs[36], dInputs[37]) * OrbMech::FT2M;
+
+	ShuttleLWP::ShuttleLaunchWindowProcessor lwp(globcnst, sescnst);
+
+	if (UseDrag == false)
+	{
+		in.CCD = in.ET_CD = 0.0;
+	}
+
+	// Format output
+	char Buffer[256];
+
+	if (IsLW)
+	{
+		ShuttleLWP::ShuttleLWPOutputs out;
+
+		int err = lwp.CalculateLW(in, out);
+		if (err) return err;
+
+		OrbMech::GMT2String4(Buffer, out.GMTLO_OPT);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.PHASE_OPT * OrbMech::DEG);
+		data.push_back(Buffer);
+		OrbMech::GMT2String4(Buffer, out.GMTLO_OPEN);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.PHASE_OPEN * OrbMech::DEG);
+		data.push_back(Buffer);
+		OrbMech::GMT2String4(Buffer, out.GMTLO_CLOSE);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.PHASE_CLOSE * OrbMech::DEG);
+		data.push_back(Buffer);
+
+		for (int i = 0; i < 2; i++)
+		{
+			if (in.OMS2Phase[i])
+			{
+				sprintf_s(Buffer, "%.1lf", in.OMS2PhaseAngle[i] * OrbMech::DEG);
+				data.push_back(Buffer);
+				OrbMech::GMT2String4(Buffer, out.GMTLO_PHASE[i]);
+				data.push_back(Buffer);
+			}
+			else
+			{
+				data.push_back("");
+				data.push_back("");
+			}
+		}
+	}
+	else
+	{
+		ShuttleLWP::ShuttleLTPOutputs out;
+
+		int err = lwp.CalculateLT(in, out);
+		if (err) return err;
+
+		LTP_Outputs = out;
+
+		OrbMech::GMT2String4(Buffer, out.GMTLO);
+		data.push_back(Buffer);
+		OrbMech::GMT2String4(Buffer, out.MET_MECO);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.VMECO / OrbMech::FT2M);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.4lf", out.RMECO / OrbMech::NM);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.4lf", out.GMECO * OrbMech::DEG);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.3lf", out.IMECO * OrbMech::DEG);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.PHASE_MECO * OrbMech::DEG);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.HA_MECO / OrbMech::NM);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.HP_MECO / OrbMech::NM);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.LONG_MECO * OrbMech::DEG);
+		data.push_back(Buffer);
+		OrbMech::GMT2String4(Buffer, out.OMS1_TIG);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.OMS1_DV / OrbMech::FT2M);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.OMS1_HA / OrbMech::NM);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.OMS1_HP / OrbMech::NM);
+		data.push_back(Buffer);
+		OrbMech::GMT2String4(Buffer, out.OMS2_TIG);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.OMS2_DV / OrbMech::FT2M);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.OMS2_HA / OrbMech::NM);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.OMS2_HP / OrbMech::NM);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.OMS2_NODE * OrbMech::DEG);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.OMS2_PHASE * OrbMech::DEG);
+		data.push_back(Buffer);
+		OrbMech::GMT2String4(Buffer, out.OMS2_PERIOD);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.TGT_HA / OrbMech::NM);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.TGT_HP / OrbMech::NM);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.1lf", out.TGT_LONG * OrbMech::DEG);
+		data.push_back(Buffer);
+		sprintf_s(Buffer, "%.6lf", out.TGT_DELN* OrbMech::DEG);
+		data.push_back(Buffer);
+		OrbMech::GMT2String4(Buffer, out.TGT_PERIOD);
+		data.push_back(Buffer);
+	}
+
+	return 0;
+}
+
+int Core::ShuttleLTPExport()
+{
+	if (!Initialized) return 1;
+	if (LTP_Outputs.Error != 0) return 1;
+
+	std::ofstream myfile;
+	std::string file;
+
+	file = ProjectFolder + "Outputs/ShuttleTargeting.txt";
+
+	myfile.open(file);
+	if (myfile.is_open() == false) return 1;
+
+	//Get target state vector to T-9 minutes and T-31 seconds
+	OrbMech::StateVector sv_T_9min, sv_T_31sec;
+	double GMT_9min, MJD_9min, GMT_31sec, MJD_31sec;
+	char buf[1024];
+
+	GMT_9min = LTP_Outputs.GMTLO - 540.1;
+	MJD_9min = sescnst.GMTBASE + GMT_9min / 24.0 / 3600.0;
+
+	EnckeIntegratorInput in;
+	EnckeIntegratorOutput out;
+
+	EnckeIntegrator encke(globcnst);
+
+	in.R = LTP_Outputs.sv_T.R;
+	in.V = LTP_Outputs.sv_T.V;
+	in.GMT = LTP_Outputs.sv_T.GMT;
+	in.KFactor = LTP_Outputs.sv_T.KFactor;
+	in.DragIndicator = true;
+	in.Weight = LTP_Outputs.sv_T.Weight;
+	in.Area = LTP_Outputs.sv_T.Area;
+	in.dt = GMT_9min - LTP_Outputs.sv_T.GMT;
+
+	encke.Propagate(in, out);
+	if (out.Error) return out.Error;
+
+	//Convert to J2000 (right-handed)
+	sv_T_9min.R = mul(sescnst.M_TEG_TO_J2000, out.R);
+	sv_T_9min.V = mul(sescnst.M_TEG_TO_J2000, out.V);
+
+	GMT_31sec = LTP_Outputs.GMTLO - 31.1;
+	MJD_31sec = sescnst.GMTBASE + GMT_31sec / 24.0 / 3600.0;
+
+	in.dt = GMT_31sec - LTP_Outputs.sv_T.GMT;
+
+	encke.Propagate(in, out);
+	if (out.Error) return out.Error;
+
+	//Convert to J2000 (right-handed)
+	sv_T_31sec.R = mul(sescnst.M_TEG_TO_J2000, out.R);
+	sv_T_31sec.V = mul(sescnst.M_TEG_TO_J2000, out.V);
+
+	// Calculate IY vectors
+	VECTOR3 IY_MECO_M50, IY_OMS1_M50, IY_OMS2_M50;
+
+	IY_MECO_M50 = mul(sescnst.M_TEG_TO_M50, LTP_Outputs.IY_MECO);
+	IY_OMS1_M50 = mul(sescnst.M_TEG_TO_M50, LTP_Outputs.IY_OMS1);
+	IY_OMS2_M50 = mul(sescnst.M_TEG_TO_M50, LTP_Outputs.IY_OMS2);
+
+	double DT_ET_SET = 18.0;
+
+	//Write to file
+	sprintf_s(buf, "%04d-%02d-%02d", sescnst.Year, sescnst.Month, sescnst.Day);
+	myfile << "Shuttle launch targeting for " << buf << std::endl;
+	OrbMech::GMT2String4(buf, LTP_Outputs.GMTLO);
+	myfile << "GMTLO = " << buf << std::endl << std::endl;
+
+	myfile << "SCENARIO DATA" << std::endl << std::endl;
+
+	myfile << "MJD of T-9min:" << std::endl;
+	sprintf_s(buf, "%.9lf", MJD_9min);
+	myfile << buf << std::endl << std::endl;
+
+	myfile << "Target state vector for scenario (T-9min):" << std::endl;
+	sprintf_s(buf, "RPOS %.3lf %.3lf %.3lf", sv_T_9min.R.x, sv_T_9min.R.z, sv_T_9min.R.y);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "RVEL %.4lf %.4lf %.4lf", sv_T_9min.V.x, sv_T_9min.V.z, sv_T_9min.V.y);
+	myfile << buf << std::endl << std::endl;
+
+	myfile << "MJD of T-31sec:" << std::endl;
+	sprintf_s(buf, "%.9lf", MJD_31sec);
+	myfile << buf << std::endl << std::endl;
+
+	myfile << "Target state vector for scenario (T-31sec):" << std::endl;
+	sprintf_s(buf, "RPOS %.3lf %.3lf %.3lf", sv_T_31sec.R.x, sv_T_31sec.R.z, sv_T_31sec.R.y);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "RVEL %.4lf %.4lf %.4lf", sv_T_31sec.V.x, sv_T_31sec.V.z, sv_T_31sec.V.y);
+	myfile << buf << std::endl;
+
+	myfile << std::endl << "LEGACY MECO" << std::endl << std::endl;
+
+	sprintf_s(buf, "%.4lf", LTP_Outputs.IMECO * OrbMech::DEG);
+	myfile << "Inclination (deg) " << buf << std::endl;
+	sprintf_s(buf, "%.0lf", LTP_Outputs.RMECO - globcnst.R_E); // 6.37101e6 radius in default Orbiter
+	myfile << "Altitude (m) " << buf << std::endl;
+	sprintf_s(buf, "%.4lf", LTP_Outputs.VMECO);
+	myfile << "Velocity (m/s) " << buf << std::endl;
+	sprintf_s(buf, "%.4lf", LTP_Outputs.GMECO * OrbMech::DEG);
+	myfile << "Flight Path Angle (deg) " << buf << std::endl;
+	sprintf_s(buf, "%.8lf %.8lf %.8lf", IY_MECO_M50.x, IY_MECO_M50.y, IY_MECO_M50.z);
+	myfile << "IY Plane (M50) " << buf << std::endl;
+
+	myfile << std::endl << "I-LOADS" << std::endl << std::endl;
+
+	sprintf_s(buf, "TLO %.3lf", LTP_Outputs.GMTLO + sescnst.DayOfYear * 24.0 * 3600.0);
+	myfile << buf << std::endl;
+
+	// TBD: Min IY
+
+	sprintf_s(buf, "IYD_NOM = %+.8lf %+.8lf %+.8lf", IY_MECO_M50.x, IY_MECO_M50.y, IY_MECO_M50.z);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "NODE_SLOPE = %e", LTP_Outputs.NODE_SLOPE);
+	myfile << buf << std::endl;
+
+	// TBD: D-psi, Delta Node Phase, GMT Phase
+
+	sprintf_s(buf, "IYD_OMS1 = %+.8lf %+.8lf %+.8lf", IY_OMS1_M50.x, IY_OMS1_M50.y, IY_OMS1_M50.z);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "IYD_OMS2 = %+.8lf %+.8lf %+.8lf", IY_OMS2_M50.x, IY_OMS2_M50.y, IY_OMS2_M50.z);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "DTIG_OMS1 = %lf", LTP_Outputs.OMS1.DTIG - DT_ET_SET);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "HTGT_OMS1 = %.1lf", LTP_Outputs.OMS1.HTGT / OrbMech::FT2M);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "THETA_OMS1 = %lf", LTP_Outputs.OMS1.THETA);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "C1_OMS1 = %lf", LTP_Outputs.OMS1.C1 / OrbMech::FT2M);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "C2_OMS1 = %lf", LTP_Outputs.OMS1.C2);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "DTIG_OMS2 = %lf", LTP_Outputs.OMS2.DTIG - DT_ET_SET);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "HTGT_OMS2 = %.1lf", LTP_Outputs.OMS2.HTGT / OrbMech::FT2M);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "THETA_OMS2 = %lf", LTP_Outputs.OMS2.THETA);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "C1_OMS2 = %lf", LTP_Outputs.OMS2.C1 / OrbMech::FT2M);
+	myfile << buf << std::endl;
+	sprintf_s(buf, "C2_OMS2 = %lf", LTP_Outputs.OMS2.C2);
+	myfile << buf << std::endl;
+
+	myfile.close();
+	return 0;
+}
+
+int Core::SaveShuttleLWPStateVector(std::string filename)
+{
+	if (LTP_Outputs.sv_C_OMS1.GMT != 0.0)
+	{
+		SaveStateVector(ProjectFolder + "State Vectors/" + filename, LTP_Outputs.sv_C_OMS1);
+		return 0;
+	}
+	return 1;
 }
 
 bool Core::RunOMP(std::string inputs[], std::string& errormessage, std::vector<std::vector<std::string>>& data)
@@ -627,16 +988,6 @@ int Core::AgeOfStateVector(std::string inputs[], double& age) const
 	return 0;
 }
 
-int Core::CalculateDayOfYear(int Year, int Month, int Day, int& DOY) const
-{
-	if (Year < 1900 || Year > 2100) return 1;
-	if (Month < 1 || Month > 12) return 1;
-	if (Day < 1 || Day > 31) return 1;
-
-	DOY = OrbMech::dayofyear(Year, Month, Day);
-	return 0;
-}
-
 int Core::ReadMCTFile(std::string file, std::vector<OMP::ManeuverConstraintsInput>& MCT) const
 {
 	MCT.clear();
@@ -706,13 +1057,24 @@ int Core::ReadMCTLine(std::string line, std::vector<OMP::ManeuverConstraintsInpu
 	return 0;
 }
 
+bool Core::IsInitialized() const
+{
+	return Initialized;
+}
+
 double Core::GetLWP_GMTLO() const
 {
 	return LWPSummaryTable.GMTLO;
 }
 
+int Core::GetDayOfYear() const
+{
+	return sescnst.DayOfYear;
+}
+
 int Core::SetConstants(int world, int Year, int Month, int Day)
 {
+	Initialized = false;
 	if (SetGlobalConstants(world)) return 1;
 	if (SetSessionConstants(Year, Month, Day)) return 1;
 	Initialized = true;
@@ -725,7 +1087,7 @@ int Core::SetGlobalConstants(int world)
 
 	if (world == 0)
 	{
-		//NASSP
+		// NASSP
 		globcnst.mu = 0.3986032e15;
 		globcnst.R_E = globcnst.R_E_equ = 6.373338e6;
 		globcnst.J2 = 1082.6269e-6;
@@ -746,10 +1108,10 @@ int Core::SetGlobalConstants(int world)
 	}
 	else if (world == 1)
 	{
-		//SSV
+		// SSV
 		globcnst.mu = 0.3986032e15;
 		globcnst.R_E = 6.37101e6;
-		globcnst.R_E_equ = 6378165.0;
+		globcnst.R_E_equ = 6378166.0;
 		globcnst.J2 = 1082.6269e-6;
 		globcnst.J3 = -2.51e-6;
 		globcnst.J4 = -1.60e-6;
@@ -768,7 +1130,7 @@ int Core::SetGlobalConstants(int world)
 	}
 	else if (world == 2)
 	{
-		//"Real" world
+		// TBD: "Real" world
 
 		a = 6389178.0;
 		b = 6356797.0;
@@ -828,6 +1190,16 @@ void Core::SetLaunchTime(int H, int M, double S)
 	sescnst.launchdateSec = S;
 }
 
+MATRIX3 Core::TEG_to_EF_Matrix(double gmt) const
+{
+	double CL, SL;
+
+	CL = cos(gmt * globcnst.w_E);
+	SL = sin(gmt * globcnst.w_E);
+
+	return _M(CL, SL, 0.0, -SL, CL, 0.0, 0.0, 0.0, 1.0);
+}
+
 void Core::SaveStateVector(std::string file, const OrbMech::StateVector& sv)
 {
 	std::ofstream myfile;
@@ -883,6 +1255,10 @@ int Core::LoadStateVector(std::string file, OrbMech::StateVector &sv) const
 	{
 		coord = 1;
 	}
+	else if (line == "M50")
+	{
+		coord = 2;
+	}
 	else if (line == "TLE")
 	{
 		coord = 10;
@@ -921,16 +1297,26 @@ int Core::LoadStateVector(std::string file, OrbMech::StateVector &sv) const
 
 		sv = sv_temp;
 
-		//Coordinate conversion
-		if (coord == 1)
+		// Coordinate conversion
+		if (coord == 1 || coord == 2)
 		{
-			//J2000 to TEG
 			MATRIX3 Rot;
 
-			Rot = mul(OrbMech::tmat(sescnst.M_TEG_TO_M50), OrbMech::M_J2000_to_M50);
+			if (coord == 1)
+			{
+				// J2000 to TEG
+				Rot = mul(OrbMech::tmat(sescnst.M_TEG_TO_M50), OrbMech::M_J2000_to_M50);
+				sv.R = mul(Rot, _V(sv_temp.R.x, sv_temp.R.z, sv_temp.R.y));
+				sv.V = mul(Rot, _V(sv_temp.V.x, sv_temp.V.z, sv_temp.V.y));
+			}
+			else
+			{
+				// M50 to TEG
+				Rot = OrbMech::tmat(sescnst.M_TEG_TO_M50);
+				sv.R = mul(Rot, sv_temp.R);
+				sv.V = mul(Rot, sv_temp.V);
+			}
 
-			sv.R = mul(Rot, _V(sv_temp.R.x, sv_temp.R.z, sv_temp.R.y));
-			sv.V = mul(Rot, _V(sv_temp.V.x, sv_temp.V.z, sv_temp.V.y));
 			sv.GMT = (sv_temp.GMT - sescnst.GMTBASE) * 24.0 * 3600.0; //MJD to GMT
 		}
 	}

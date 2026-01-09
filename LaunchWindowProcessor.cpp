@@ -1065,33 +1065,22 @@ namespace LWP
 		sv1.GMT = outp.GMT;
 
 		//Also calculate some orbital elements
-		OrbMech::CELEMENTS coe = OrbMech::CartesianToKeplerian(sv1.R, sv1.V, globconst.mu);
-
+		OrbMech::CELEMENTS coe_osc, coe_mean;
 		LWPOrbitalElements elem;
-		double p, u;
+		double l_dot, g_dot, h_dot;
 
-		elem.A = coe.a;
-		elem.E = coe.e;
-		elem.I = coe.i;
-		elem.H = coe.h;
-		elem.L = coe.l;
+		OrbMech::ConvertToAEGElements(sv1, globconst, coe_osc, coe_mean, l_dot, g_dot, h_dot);
 
-		//Mean inclination and longitude of the ascending node
-		p = coe.a * (1.0 - coe.e * coe.e);
-		u = OrbMech::ArgLat(sv1.R, sv1.V);
-		elem.MI = coe.i - 1.5 * globconst.J2 * pow(globconst.R_E, 2) / (4.0 * p * p) * sin(2.0 * coe.i) * cos(2.0 * u);
-		elem.MH = coe.h - 1.5 * globconst.J2 * pow(globconst.R_E, 2) / (2.0 * p * p) * cos(elem.MI) * sin(2.0 * u);
-	
-		//Estimate the mean semi-major axis
-		double ar3, da_sp;
-		
-		ar3 = pow(coe.a / length(sv1.R), 3);
-		da_sp = globconst.J2 * pow(globconst.R_E, 2) / coe.a * (ar3 - 1.0 / pow(1.0 - pow(coe.e, 2), 1.5) + (-ar3 + 1.0 / pow(1.0 - pow(coe.e, 2), 1.5) + ar3 * cos(2.0 * u)) * 3.0 * pow(sin(coe.i), 2) / 2.0);
-		elem.MA = coe.a - da_sp;
-
-		//Secular rates
-		elem.HDOT = -1.5 * (globconst.sqrt_mu * globconst.J2 * pow(globconst.R_E, 2) / (pow(1.0 - pow(coe.e, 2), 2) * pow(elem.MA, 3.5))) * cos(elem.MI);
-		elem.LDOT = OrbMech::PI2 / OrbMech::REVTIM(sv1.R, sv1.V, globconst);
+		elem.A = coe_osc.a;
+		elem.E = coe_osc.e;
+		elem.I = coe_osc.i;
+		elem.H = coe_osc.h;
+		elem.L = coe_osc.l;
+		elem.MA = coe_mean.a;
+		elem.MI = coe_mean.i;
+		elem.MH = coe_mean.h;
+		elem.LDOT = l_dot;
+		elem.HDOT = h_dot;
 
 		if (chaser)
 		{

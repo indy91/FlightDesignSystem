@@ -51,6 +51,9 @@
     <ClInclude Include="SGP4\SGP4.h">
       <Filter>SGP4</Filter>
     </ClInclude>
+    <ClInclude Include="ShuttleLaunchWindowProcessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Flight Design System.cpp">
@@ -79,6 +82,9 @@
     </ClCompile>
     <ClCompile Include="SGP4\SGP4.cpp">
       <Filter>SGP4</Filter>
+    </ClCompile>
+    <ClCompile Include="ShuttleLaunchWindowProcessor.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
