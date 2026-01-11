@@ -1489,7 +1489,7 @@ void OrbitalManeuverProcessor::CalculateManeuverEvalTable(OrbMech::StateVector s
 {
 	OrbMech::StateVector sv_cur, sv_P_cur, sv_temp;
 	VECTOR3 u, R, Rtemp, Vtemp, R_REL, V_REL;
-	double apo, peri, dt1, dt2;
+	double HA, HP, dt1, dt2;
 	MANEVALDATA man;
 
 	sv_cur = sv_A0;
@@ -1547,15 +1547,15 @@ void OrbitalManeuverProcessor::CalculateManeuverEvalTable(OrbMech::StateVector s
 
 		if (ManeuverData[i].ChaserMan)
 		{
-			ApsidesMagnitudeDetermination(sv_cur, apo, peri);
+			ApsidesMagnitudeDetermination(sv_cur, HA, HP);
 		}
 		else
 		{
-			ApsidesMagnitudeDetermination(sv_P_cur, apo, peri);
+			ApsidesMagnitudeDetermination(sv_P_cur, HA, HP);
 		}
 
-		man.HA = (apo - constants.R_E_equ) / 1852.0;
-		man.HP = (peri - constants.R_E_equ) / 1852.0;
+		man.HA = HA / 1852.0;
+		man.HP = HP / 1852.0;
 
 		//Calculate DH
 		u = unit(crossp(sv_P_cur.R, sv_P_cur.V));
@@ -2169,17 +2169,9 @@ int OrbitalManeuverProcessor::GetOMPThresholdValue(std::string buf, OMP::OMPDefs
 	return 0;
 }
 
-void OrbitalManeuverProcessor::ApsidesMagnitudeDetermination(OrbMech::StateVector sv0, double& r_A, double& r_P) const
+void OrbitalManeuverProcessor::ApsidesMagnitudeDetermination(OrbMech::StateVector sv0, double& HA, double& HP) const
 {
-	OrbMech::OELEMENTS coe;
-	double r, a, u;
-
-	coe = OrbMech::coe_from_sv(sv0.R, sv0.V, constants.mu);
-	a = OrbMech::GetSemiMajorAxis(sv0.R, sv0.V, constants.mu);
-	r = length(sv0.R);
-	u = coe.TA + coe.w;
-
-	OrbMech::PIFAAP(a, coe.e, coe.i, coe.TA, u, r, constants.R_E, constants.J2, r_A, r_P);
+	OrbMech::OPS3_ORB_ALT_TSK(sv0.R, sv0.V, constants, HA, HP);
 }
 
 int OrbitalManeuverProcessor::Sunrise(OrbMech::StateVector sv0, bool rise, bool midnight, OrbMech::StateVector &sv1) const

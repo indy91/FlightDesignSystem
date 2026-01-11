@@ -1086,7 +1086,7 @@ void FDSFrame::AddShuttleLWPPage()
     textShuttleLWP_LT_Out[25] = new wxTextCtrl(panel_LTP_EXECUTION, wxID_ANY, "", wxPoint(minX + diffX, Y), wxDefaultSize, wxTE_READONLY);
     Y += diffY;
 
-    new wxButton(panel_LTP_EXECUTION, ID_Button_ShuttleLWP_SaveStateVector, wxT("Save SV"),
+    new wxButton(panel_LTP_EXECUTION, ID_Button_ShuttleLWP_SaveStateVector, wxT("Save MPS Dump SV"),
         wxPoint(minX + 16, Y + 64), wxDefaultSize);
 
     new wxButton(panel_LTP_EXECUTION, ID_Button_ShuttleLWP_Export, wxT("Export"),

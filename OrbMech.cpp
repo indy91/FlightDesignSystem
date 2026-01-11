@@ -1505,31 +1505,6 @@ namespace OrbMech
 		}
 	}
 
-	void PIFAAP(double a, double e, double i, double f, double u, double r, double R_E, double J2, double& r_A, double& r_P)
-	{
-		double a_ref, e_ref, p_ref, p, K1, K2, df, r_1, r_2;
-
-		a_ref = r + 1.5*J2 * R_E * (1.0 - 3.0 / 2.0 * pow(sin(i), 2) + 5.0 / 6.0 * pow(sin(i), 2) * cos(2.0 * u));
-		e_ref = 1.0 - r / a_ref;
-		p_ref = a_ref * (1.0 - e_ref * e_ref);
-		p = a * (1.0 - e * e);
-		K1 = e / sqrt(p);
-		K2 = e_ref / sqrt(p_ref);
-		df = atan2(K1 * sin(f), K2 - K1 * cos(f));
-		r_1 = p / (1.0 + e * cos(f + df)) - p_ref / (1.0 + e_ref * cos(df)) + r;
-		r_2 = p / (1.0 - e * cos(f + df)) - p_ref / (1.0 - e_ref * cos(df)) + r;
-		if (r_1 >= r_2)
-		{
-			r_A = r_1;
-			r_P = r_2;
-		}
-		else
-		{
-			r_A = r_2;
-			r_P = r_1;
-		}
-	}
-
 	void BrouwerSecularRates(CELEMENTS coe_osc, CELEMENTS coe_mean, const GlobalConstants& cnst, double& l_dot, double& g_dot, double& h_dot)
 	{
 		double n0, eccdp2, cn, cn2, theta, theta2, theta3, theta4, k2, k4, gm2, gm4, gmp2, gmp4;

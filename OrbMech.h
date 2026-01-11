@@ -228,7 +228,6 @@ namespace OrbMech
 	void RADUP(VECTOR3 R_W, VECTOR3 V_W, VECTOR3 R_C, double mu, VECTOR3& R_W1, VECTOR3& V_W1);
 
 	void ITER(double& c, int& s, double e, double& p, double& x, double& eo, double& xo, double dx0 = 1.0);
-	void PIFAAP(double a, double e, double i, double f, double u, double r, double R_E, double J2, double& r_A, double& r_P);
 	void BrouwerSecularRates(CELEMENTS coe_osc, CELEMENTS coe_mean, const GlobalConstants& cnst, double& l_dot, double& g_dot, double& h_dot);
 	int KwokMeanElements(CELEMENTS coe_osc, const GlobalConstants& cnst, CELEMENTS& coe_mean);
 	int ConvertToAEGElements(StateVector sv, const GlobalConstants& cnst, CELEMENTS &coe_osc, CELEMENTS& coe_mean, double& l_dot, double& g_dot, double& h_dot);

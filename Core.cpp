@@ -23,52 +23,6 @@ program. If not, see <https://www.gnu.org/licenses/>.
 #include <sstream>
 #include "SGP4/SGP4.h"
 
-static inline bool papiReadScenario_double(const char* line, const char* item, double& d) {
-
-	char buffer[256];
-	double e;
-
-	if (sscanf_s(line, "%s", buffer, 255) == 1) {
-		if (!strcmp(buffer, item)) {
-			if (sscanf_s(line, "%s %lf", buffer, 255, &e) == 2) {
-				d = e;
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-static inline bool papiReadScenario_int(const char* line, const char* item, int& i) {
-
-	char buffer[256];
-	int e;
-
-	if (sscanf_s(line, "%s", buffer, 255) == 1) {
-		if (!strcmp(buffer, item)) {
-			if (sscanf_s(line, "%s %d", buffer, 255, &e) == 2) {
-				i = e;
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-static inline bool papiReadScenario_string(std::string line, std::string item, std::string& s) {
-
-	std::string temp;
-
-	temp = line.substr(0, line.find(' '));
-
-	if (temp == item)
-	{
-		s = line.substr(item.size() + 1U);
-		return true;
-	}
-	return false;
-}
-
 Core::Core()
 {
 	Initialized = false;

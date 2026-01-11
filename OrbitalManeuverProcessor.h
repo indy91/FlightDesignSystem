@@ -242,7 +242,7 @@ namespace OMP
 
 		static int GetOMPThresholdValue(std::string buf, OMP::OMPDefs::THRESHOLD type, double& val);
 
-		void ApsidesMagnitudeDetermination(OrbMech::StateVector sv0, double& r_A, double& r_P) const; //Apogee/Perigee Magnitude Determination
+		void ApsidesMagnitudeDetermination(OrbMech::StateVector sv0, double& HA, double& HP) const; //Apogee/Perigee Magnitude Determination
 
 		// INPUTS
 		OrbMech::StateVector sv_chaser;
