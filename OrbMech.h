@@ -21,7 +21,7 @@ program. If not, see <https://www.gnu.org/licenses/>.
 
 namespace OrbMech
 {
-	//Matrix converting J2000 to M50 (right-handed)
+	//Matrix converting J2000 ecliptic to M50 (right-handed)
 	const MATRIX3 M_J2000_to_M50 = _M(9.999257079515327e-01, 1.218927600080109e-02, 1.132264483832182e-05, -1.117893818888212e-02,
 		9.174139277929019e-01, -3.977772195998275e-01, -4.859003868607689e-03, 3.977475413402031e-01, 9.174820343958939e-01);
 	const double LAN_MJD = 51544.5;				//MJD of the LAN in the "beginning", J2000
@@ -93,13 +93,13 @@ namespace OrbMech
 
 	struct SessionConstants
 	{
-		//MJD at midnight before launch, days
+		// MJD at midnight before launch, days
 		double GMTBASE;
-		//Rotation matrix from TEG (true-equator and Greenwich meridian of date) to M50, right handed
+		// Rotation matrix from TEG (true-equator and Greenwich meridian of date) to M50, right handed
 		MATRIX3 M_TEG_TO_M50;
-		//Rotation matrix from TEG (true-equator and Greenwich meridian of date) to J2000, right handed
+		// Rotation matrix from TEG (true-equator and Greenwich meridian of date) to J2000 ecliptic, right handed
 		MATRIX3 M_TEG_TO_J2000;
-		//GMT of liftoff on launch day, seconds
+		// GMT of liftoff on launch day, seconds
 		double GMTLO;
 		//Date
 		int Year;
@@ -108,8 +108,12 @@ namespace OrbMech
 		int DayOfYear;
 		int Hours;
 		int Minutes;
-		//Seconds of liftoff
+		// Seconds of liftoff
 		double launchdateSec;
+		// Time system (1 = UTC, 2 = TDB)
+		int TimeSystem;
+		// Ephemeris delta time (ET - UTC)
+		double EDT;
 	};
 
 	//Gautschi's method for solving Gaussian continued fraction, used for Kepler's problem in time
@@ -240,6 +244,8 @@ namespace OrbMech
 	double Date2MJD(int Y, int D, int H, int M, double S);
 	int dayofyear(int year, int month, int day);
 	bool isleapyear(int a);
+	double JD2MJD(double JD);
+	double MJD2JD(double MJD);
 
 	//Output formatting
 	void SS2HHMMSS(double val, double& hh, double& mm, double& ss);
@@ -250,6 +256,28 @@ namespace OrbMech
 
 	MATRIX3 GetRotationMatrix(const GlobalConstants &cnst, double t);
 	MATRIX3 GetObliquityMatrix(const GlobalConstants& cnst, double t);
+
+	// B1950 conversions
+	MATRIX3 B1950InertialToPseudoBodyFixed(double MJD_UTC, double EDT);
+	MATRIX3 B1950InertialToMeanOfDate(double T_U);
+	void B1950MeanOfDateToTrueOfDate(double T, MATRIX3 &N, double &nutation_in_longitude, double &true_obliquity);
+	void B1950SimplifiedNutationTheory(double T, double& mean_obliquity, double& nutation_of_obliquity, double& nutation_in_longitude);
+	double B1950MeanSiderealTime(double T_U);
+	double B1950TrueSiderealTime(double T_U, double nutation_in_longitude, double true_obliquity);
+	// J2000 conversion
+	MATRIX3 J2000InertialToMeanOfDate(double t);
+	MATRIX3 J2000MeanOfDateToTrueOfDate(double T);
+	void J2000SimplifiedNutationTheory(double T, double& mean_obliquity, double& nutation_of_obliquity, double& nutation_in_longitude);
+	double J2000MeanSiderealTime(double T_U);
+	// Common conversions
+	MATRIX3 MeanOfDateToTrueOfDate(double eps_mean, double dpsi, double eps_true);
+	MATRIX3 TrueOfDateToPseudoBodyFixed(double alpha_g);
+	MATRIX3 TEMEToPseudoBodyFixed(double JD_UTC);
+	MATRIX3 TEG_to_EF_Matrix(const GlobalConstants& cnst, double gmt);
+
+	// Rotation matrices
+	MATRIX3 R_X(double a);
+	MATRIX3 R_Z(double a);
 
 	double acos2(double _X);
 }

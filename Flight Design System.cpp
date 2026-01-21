@@ -39,6 +39,8 @@ enum
     ID_TextBox_Year,
     ID_TextBox_Month,
     ID_TextBox_Day,
+    ID_TextBox_EDT,
+    ID_Button_EDT,
     ID_Button_LWP_SIB_Presets,
     ID_Button_LWP_Shuttle_Presets,
     ID_Button_Save,
@@ -49,7 +51,6 @@ enum
     ID_Button_SV_Save,
     ID_Button_SV_New,
     ID_Button_LWP_LVDC_Export,
-    ID_Button_LWP_SSV_Export,
     ID_Button_MCT_View,
     ID_Button_MCT_Save,
     ID_Button_FDOMFD_Export,
@@ -58,7 +59,7 @@ enum
     ID_Button_Shuttle_LTP_Execute,
     ID_World,
     ID_Button_ShuttleLWP_Export,
-    ID_Button_ShuttleLWP_SaveStateVector
+    ID_Button_ShuttleLWP_SaveStateVector,
 };
 
 BEGIN_EVENT_TABLE(FDSFrame, wxFrame)
@@ -78,9 +79,10 @@ EVT_BUTTON(ID_Button_SV_New, FDSFrame::OnButton_StateVector_New)
 EVT_TEXT(ID_TextBox_Year, FDSFrame::CalculateDayOfYear)
 EVT_TEXT(ID_TextBox_Month, FDSFrame::CalculateDayOfYear)
 EVT_TEXT(ID_TextBox_Day, FDSFrame::CalculateDayOfYear)
+EVT_TEXT(ID_TextBox_EDT, FDSFrame::CalculateDayOfYear)
+EVT_BUTTON(ID_Button_EDT, FDSFrame::CalculateEphemerisDT)
 EVT_CHOICE(ID_World, FDSFrame::CalculateDayOfYear)
 EVT_BUTTON(ID_Button_LWP_LVDC_Export, FDSFrame::OnButton_LWP_LVDC_Export)
-EVT_BUTTON(ID_Button_LWP_SSV_Export, FDSFrame::OnButton_LWP_SSV_Export)
 EVT_BUTTON(ID_Button_MCT_View, FDSFrame::OnButton_View_MCT)
 EVT_BUTTON(ID_Button_MCT_Save, FDSFrame::OnButton_Save_MCT)
 EVT_BUTTON(ID_Button_FDOMFD_Export, FDSFrame::OnButton_FDOMFD_Export)
@@ -191,6 +193,7 @@ void FDSFrame::AddConfigPage()
     new wxStaticText(panel1, wxID_ANY, "World", wxPoint(minX, Y + difftext));
     strings.Add(wxT("NASSP"));
     strings.Add(wxT("SSV"));
+    strings.Add(wxT("Real"));
     Add(comboWorld = new wxChoice(panel1, ID_World, wxPoint(minX + diffX, Y), wxDefaultSize, strings), "/Config/World");
     comboWorld->SetToolTip(wxT("Select world"));
     comboWorld->SetSelection(0);
@@ -210,6 +213,15 @@ void FDSFrame::AddConfigPage()
     new wxStaticText(panel1, wxID_ANY, "Day", wxPoint(minX, Y + difftext));
     Add(textDay = new wxTextCtrl(panel1, ID_TextBox_Day, "15", wxPoint(minX + diffX, Y)), "/Config/Day");
     textDay->SetToolTip(wxT("Liftoff day"));
+    Y += diffY;
+
+    new wxStaticText(panel1, wxID_ANY, "EDT", wxPoint(minX, Y + difftext));
+    Add(textDETUTC = new wxTextCtrl(panel1, ID_TextBox_EDT, "0.0", wxPoint(minX + diffX, Y)), "/Config/DETUTC");
+    textDETUTC->SetToolTip(wxT("Ephemeris Time (ET/TT/TDB) minus Universal Time (UTC)"));
+    new wxStaticText(panel1, wxID_ANY, "sec", wxPoint(minX + diffunit, Y + difftext));
+
+    new wxButton(panel1, ID_Button_EDT, "Calculate EDT", wxPoint(minX + diffunit + 100, Y));
+
     Y += diffY;
     Y += diffY;
 
@@ -519,8 +531,6 @@ void FDSFrame::AddLWPPage()
     textLWP_Actual_GMTLO = new wxTextCtrl(panel2, wxID_ANY, "", wxPoint(minX, Y),wxDefaultSize, wxTE_READONLY);
     Y += diffY;
     new wxButton(panel2, ID_Button_LWP_LVDC_Export, wxT("Export LVDC"), wxPoint(minX, Y), wxDefaultSize);
-    Y += diffY;
-    new wxButton(panel2, ID_Button_LWP_SSV_Export, wxT("Export SSV"), wxPoint(minX, Y), wxDefaultSize);
 }
 
 void FDSFrame::AddShuttleLWPPage()
@@ -607,7 +617,7 @@ void FDSFrame::AddShuttleLWPPage()
     Y += diffY;
 
     new wxStaticText(panel_Init, wxID_ANY, "LONGLS", wxPoint(minX, Y + difftext));
-    Add(textShuttleLWP_LONGLS = new wxTextCtrl(panel_Init, wxID_ANY, "279.379138", wxPoint(minX + diffX, Y)), "/ShuttleLWP/LONGLS");
+    Add(textShuttleLWP_LONGLS = new wxTextCtrl(panel_Init, wxID_ANY, "279.395928", wxPoint(minX + diffX, Y)), "/ShuttleLWP/LONGLS");
     textShuttleLWP_LONGLS->SetToolTip(wxT("Geographic longitude of launch site"));
     new wxStaticText(panel_Init, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -2316,6 +2326,7 @@ int FDSFrame::SetConstants()
         core = new Core();
     }
 
+    double EDT;
     int Year, Month, Day;
 
     textDayOfYear->ChangeValue("Invalid date!");
@@ -2323,8 +2334,9 @@ int FDSFrame::SetConstants()
     if (GetInteger(textYear, "Year", &Year)) return 1;
     if (GetInteger(textMonth, "Month", &Month)) return 1;
     if (GetInteger(textDay, "Day", &Day)) return 1;
+    if (GetDouble(textDETUTC, "EDT", &EDT)) return 1;
 
-    if (core->SetConstants(comboWorld->GetSelection(), Year, Month, Day))
+    if (core->SetConstants(comboWorld->GetSelection(), Year, Month, Day, EDT))
     {
         SetStatusText("Error during initialization!");
         return 1;
@@ -2489,6 +2501,27 @@ void FDSFrame::CalculateDayOfYear(wxCommandEvent& event)
     SetConstants();
 }
 
+void FDSFrame::CalculateEphemerisDT(wxCommandEvent& event)
+{
+    double EDT;
+    int err;
+
+    err = core->GetEphemerisDT(EDT);
+
+    if (err)
+    {
+        SetStatusText("Date out of bounds!");
+        return;
+    }
+
+    wxString mystring = wxString::Format("%.3f", EDT);
+
+    textDETUTC->Clear();
+    textDETUTC->AppendText(mystring);
+
+    SetConstants();
+}
+
 void FDSFrame::OnButton_LWP_LVDC_Export(wxCommandEvent& event)
 {
     if (core->IsInitialized() == false)
@@ -2504,23 +2537,6 @@ void FDSFrame::OnButton_LWP_LVDC_Export(wxCommandEvent& event)
     }
 
     SetStatusText("LVDC data successfully exported!");
-}
-
-void FDSFrame::OnButton_LWP_SSV_Export(wxCommandEvent& event)
-{
-    if (core->IsInitialized() == false)
-    {
-        SetStatusText("Date not initialized!");
-        return;
-    }
-
-    if (core->LWPExportForSSV())
-    {
-        SetStatusText("Error exporting SSV data!");
-        return;
-    }
-
-    SetStatusText("SSV data successfully exported!");
 }
 
 void FDSFrame::OnButton_View_MCT(wxCommandEvent& event)

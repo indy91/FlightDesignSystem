@@ -29,12 +29,11 @@ public:
 	Core();
 	void Test(std::string project, std::string script);
 
-	int SetConstants(int world, int Year, int Month, int Day);
+	int SetConstants(int world, int Year, int Month, int Day, double EDT);
 
 	int RunLWP(std::string inputs[], std::vector<std::vector<std::string>> &data);
 	int SaveLWPStateVector(std::string filename);
 	int LWPExportForLVDC();
-	int LWPExportForSSV();
 
 	// Shuttle LWP
 	int RunShuttleLWP(bool IsLW, std::string strInputs[], double *dInputs, int *iInputs, std::vector<std::string>& data);
@@ -55,13 +54,13 @@ public:
 	bool IsInitialized() const;
 	double GetLWP_GMTLO() const;
 	int GetDayOfYear() const;
+	int GetEphemerisDT(double& EDT) const;
 protected:
 
 	//General
 	int SetGlobalConstants(int world);
-	int SetSessionConstants(int Year, int Month, int Day);
+	int SetSessionConstants(int world, int Year, int Month, int Day, double EDT);
 	void SetLaunchTime(int H, int M, double S);
-	MATRIX3 TEG_to_EF_Matrix(double gmt) const;
 
 	//OMP
 	int ReadMCTLine(std::string line, std::vector<OMP::ManeuverConstraintsInput>& MCT) const;

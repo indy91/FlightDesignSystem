@@ -354,91 +354,6 @@ int Core::LWPExportForLVDC()
 	return 0;
 }
 
-int Core::LWPExportForSSV()
-{
-	std::ofstream myfile;
-	std::string file;
-
-	if (!Initialized) return 1;
-	if (LWPSummaryTable.Error != 0)
-	{
-		return 1;
-	}
-
-	file = ProjectFolder + "Outputs/SSV.txt";
-
-	myfile.open(file);
-	if (myfile.is_open() == false) return 1;
-
-	//Get target state vector to T-9 minutes
-
-	double GMTSCEN, MJDSCEN;
-	char buf[1024];
-
-	GMTSCEN = LWPSummaryTable.GMTLO - 540.1;
-	MJDSCEN = sescnst.GMTBASE + GMTSCEN / 24.0 / 3600.0;
-
-	EnckeIntegratorInput in;
-	EnckeIntegratorOutput out;
-
-	in.R = PVTABT.R;
-	in.V = PVTABT.V;
-	in.GMT = PVTABT.GMT;
-	in.KFactor = PVTABT.KFactor;
-	in.DragIndicator = true;
-	in.Weight = PVTABT.Weight;
-	in.Area = PVTABT.Area;
-	in.dt = GMTSCEN - PVTABT.GMT;
-
-	EnckeIntegrator encke(globcnst);
-
-	encke.Propagate(in, out);
-
-	if (out.Error) return out.Error;
-
-	//Convert to J2000 (left-handed)
-	out.R = mul(sescnst.M_TEG_TO_J2000, out.R);
-	out.V = mul(sescnst.M_TEG_TO_J2000, out.V);
-
-	// Calculate IY vector
-	VECTOR3 IY_TEG = unit(crossp(PVTABC.V, PVTABC.R));
-	VECTOR3 IY_M50 = mul(sescnst.M_TEG_TO_M50, IY_TEG);
-	MATRIX3 TEG_TO_EF = TEG_to_EF_Matrix(LWPSummaryTable.GMTLO);
-	VECTOR3 IY_EF = mul(TEG_TO_EF, IY_TEG);
-
-	//Write to file
-	sprintf_s(buf, "%04d-%02d-%02d", sescnst.Year, sescnst.Month, sescnst.Day);
-	myfile << "SSV Shuttle targeting for " << buf << std::endl;
-	OrbMech::GMT2String4(buf, LWPSummaryTable.GMTLO);
-	myfile << "GMTLO = " << buf << std::endl << std::endl;
-
-	myfile << "MJD of T-9min:" << std::endl;
-	sprintf_s(buf, "%.9lf", MJDSCEN);
-	myfile << buf << std::endl << std::endl;
-
-	myfile << "Target state vector for scenario:" << std::endl;
-
-	sprintf_s(buf, "RPOS %.3lf %.3lf %.3lf", out.R.x, out.R.z, out.R.y);
-	myfile << buf << std::endl;
-
-	sprintf_s(buf, "RVEL %.4lf %.4lf %.4lf", out.V.x, out.V.z, out.V.y);
-	myfile << buf << std::endl << std::endl;
-
-	sprintf_s(buf, "%.4lf", LWPSummaryTable.IIGM * OrbMech::DEG);
-	myfile << "Inclination (deg) " << buf << std::endl << std::endl;
-
-	myfile << "IY vector (Earth-fixed):" << std::endl;
-	sprintf_s(buf, "%.9lf %.9lf %.9lf", IY_EF.x, IY_EF.y, IY_EF.z);
-	myfile << buf << std::endl;
-
-	myfile << "IY vector (M50):" << std::endl;
-	sprintf_s(buf, "%.9lf %.9lf %.9lf", IY_M50.x, IY_M50.y, IY_M50.z);
-	myfile << buf << std::endl;
-
-	myfile.close();
-	return 0;
-}
-
 int Core::RunShuttleLWP(bool IsLW, std::string strInputs[], double* dInputs, int* iInputs, std::vector<std::string>& data)
 {
 	ShuttleLWP::ShuttleLWPInputs in;
@@ -729,7 +644,7 @@ int Core::ShuttleLTPExport()
 	sprintf_s(buf, "%.4lf", LTP_Outputs.GMECO * OrbMech::DEG);
 	myfile << "Flight Path Angle (deg) " << buf << std::endl;
 	sprintf_s(buf, "%.8lf %.8lf %.8lf", IY_MECO_M50.x, IY_MECO_M50.y, IY_MECO_M50.z);
-	myfile << "IY Plane (M50) " << buf << std::endl;
+	myfile << "IY Vector (M50) " << buf << std::endl;
 
 	myfile << std::endl << "I-LOADS" << std::endl << std::endl;
 
@@ -1026,11 +941,43 @@ int Core::GetDayOfYear() const
 	return sescnst.DayOfYear;
 }
 
-int Core::SetConstants(int world, int Year, int Month, int Day)
+int Core::GetEphemerisDT(double& EDT) const
+{
+	// Use session constant GMTBASE
+
+	static const double MJD[] = { 41317.0, 41499.0, 41683.0, 42048.0, 42413.0, 42778.0, 43144.0, 43509.0, 43874.0, 44239.0, 44786.0, 45151.0, 45516.0, 46247.0,
+		47161.0, 47892.0, 48257.0, 48804.0, 49169.0, 49534.0, 50083.0, 50630.0, 51179.0, 53736.0, 54832.0, 56109.0, 57204.0, 57754.0 };
+	static const int NMAX = 28;
+
+	// Out of bounds check
+	if (sescnst.GMTBASE < MJD[0])
+	{
+		return 1;
+	}
+
+	double DAT;
+	int i;
+
+	i = 0;
+	DAT = 9.0;
+
+	while (i < NMAX && sescnst.GMTBASE > MJD[i])
+	{
+		DAT += 1.0;
+		i++;
+	}
+
+	// TAI to TT
+	EDT = DAT + 32.184;
+
+	return 0;
+}
+
+int Core::SetConstants(int world, int Year, int Month, int Day, double EDT)
 {
 	Initialized = false;
 	if (SetGlobalConstants(world)) return 1;
-	if (SetSessionConstants(Year, Month, Day)) return 1;
+	if (SetSessionConstants(world, Year, Month, Day, EDT)) return 1;
 	Initialized = true;
 	return 0;
 }
@@ -1084,10 +1031,19 @@ int Core::SetGlobalConstants(int world)
 	}
 	else if (world == 2)
 	{
-		// TBD: "Real" world
+		// "Real" world
+		globcnst.mu = 398600640000000.0;
+		globcnst.R_E = 6378140.0;
+		globcnst.R_E_equ = 6378166.0;
+		globcnst.J2 = 1.0826271e-3;
+		globcnst.J3 = -2.5358868e-6;
+		globcnst.J4 = -1.624618e-6;
+		globcnst.w_E = 7.29211514646e-5;
 
-		a = 6389178.0;
-		b = 6356797.0;
+		// TBD
+
+		a = 6378166.0;
+		b = 6356784.283603816;
 
 		L_ref = 0.0;
 		e_ref = 0.0;
@@ -1104,8 +1060,10 @@ int Core::SetGlobalConstants(int world)
 	return 0;
 }
 
-int Core::SetSessionConstants(int Year, int Month, int Day)
+int Core::SetSessionConstants(int world, int Year, int Month, int Day, double EDT)
 {
+	// EDT = Difference between Ephemeris Time and Universal Time
+
 	if (Year < 1900 || Year > 2100) return 1;
 	if (Month > 12) return 1;
 	if (Day > 31) return 1;
@@ -1116,14 +1074,43 @@ int Core::SetSessionConstants(int Year, int Month, int Day)
 	sescnst.GMTBASE = OrbMech::Date2MJD(Year, DayOfYear, 0, 0, 0.0);
 	sescnst.GMTLO = 0.0;
 
-	// TEG to J2000 ecliptic (left handed)
-	MATRIX3 M_EFTOECL_AT_EPOCH = OrbMech::GetRotationMatrix(globcnst, sescnst.GMTBASE);
-	// M50 to J2000 (left handed)
-	MATRIX3 M_M50TOECL = OrbMech::GetObliquityMatrix(globcnst, 33281.923357);
-	// TEG to M50 (right handed)
-	sescnst.M_TEG_TO_M50 = OrbMech::MatrixRH_LH(mul(OrbMech::tmat(M_M50TOECL), M_EFTOECL_AT_EPOCH));
-	// TEG to J2000 (right handed)
-	sescnst.M_TEG_TO_J2000 = OrbMech::MatrixRH_LH(M_EFTOECL_AT_EPOCH);
+	if (world == 2)
+	{
+		// Real
+		MATRIX3 RNP = OrbMech::B1950InertialToPseudoBodyFixed(sescnst.GMTBASE, EDT);
+		MATRIX3 B1950_to_J2000_equ = _M(0.9999256794956877, -0.0111814832204662, -0.0048590038153592,
+			0.0111814832391717, 0.9999374848933135, -0.0000271625947142,
+			0.0048590037723143, -0.0000271702937440, 0.9999881946023742);
+
+		double eps, ce, se;
+		
+		eps = 0.4090928023;// 23.44 * OrbMech::RAD;
+		ce = cos(eps);
+		se = sin(eps);
+
+		MATRIX3 J2000_equ_to_J2000_ecl = _M(1.0, 0.0, 0.0, 0.0, ce, se, 0.0, -se, ce);
+
+		sescnst.M_TEG_TO_M50 = OrbMech::tmat(RNP);
+		sescnst.M_TEG_TO_J2000 = mul(mul(J2000_equ_to_J2000_ecl, B1950_to_J2000_equ), sescnst.M_TEG_TO_M50);
+
+		sescnst.TimeSystem = 1;
+		sescnst.EDT = EDT;
+	}
+	else
+	{
+		// Orbiter
+		// TEG to J2000 ecliptic (left handed)
+		MATRIX3 M_EFTOECL_AT_EPOCH = OrbMech::GetRotationMatrix(globcnst, sescnst.GMTBASE);
+		// M50 to J2000 (left handed)
+		MATRIX3 M_M50TOECL = OrbMech::GetObliquityMatrix(globcnst, 33281.923357);
+		// TEG to M50 (right handed)
+		sescnst.M_TEG_TO_M50 = OrbMech::MatrixRH_LH(mul(OrbMech::tmat(M_M50TOECL), M_EFTOECL_AT_EPOCH));
+		// TEG to J2000 (right handed)
+		sescnst.M_TEG_TO_J2000 = OrbMech::MatrixRH_LH(M_EFTOECL_AT_EPOCH);
+
+		sescnst.TimeSystem = 2;
+		sescnst.EDT = EDT;
+	}
 
 	sescnst.Year = Year;
 	sescnst.Month = Month;
@@ -1142,16 +1129,6 @@ void Core::SetLaunchTime(int H, int M, double S)
 	sescnst.Hours = H;
 	sescnst.Minutes = M;
 	sescnst.launchdateSec = S;
-}
-
-MATRIX3 Core::TEG_to_EF_Matrix(double gmt) const
-{
-	double CL, SL;
-
-	CL = cos(gmt * globcnst.w_E);
-	SL = sin(gmt * globcnst.w_E);
-
-	return _M(CL, SL, 0.0, -SL, CL, 0.0, 0.0, 0.0, 1.0);
 }
 
 void Core::SaveStateVector(std::string file, const OrbMech::StateVector& sv)
@@ -1297,34 +1274,40 @@ int Core::LoadStateVector(std::string file, OrbMech::StateVector &sv) const
 		opsmode = 'i';
 		whichconst = gravconsttype::wgs84;
 
-		//TLE to SGP4 array
+		// TLE to SGP4 array
 		SGP4Funcs::twoline2rv(Buffer1, Buffer2, typerun, typeinput, opsmode, whichconst, startmfe, stopmfe, deltamin, satrec);
 		if (satrec.error) return satrec.error;
 
-		//Calculate current MJD
-		mjd_cur = satrec.jdsatepoch + satrec.jdsatepochF - 2400000.5;
-
-		//Convert to cartesian
+		// Convert to cartesian
 		SGP4Funcs::sgp4(satrec, 0.0, r, v);
 		if (satrec.error) return satrec.error;
 
-		//Convert from TEME to J2000
-		MATRIX3 Rot = OrbMech::GetObliquityMatrix(globcnst, mjd_cur);
-		Rot = OrbMech::MatrixRH_LH(Rot);
+		// Calculate current MJD
+		double JD_UTC = satrec.jdsatepoch + satrec.jdsatepochF;
+		mjd_cur = OrbMech::JD2MJD(JD_UTC);
+
+		// Convert from TEME to Earth fixed
+		MATRIX3 M_TEME_PEF = OrbMech::TEMEToPseudoBodyFixed(JD_UTC);
 
 		sv.R = _V(r[0], r[1], r[2]) * 1000.0;
 		sv.V = _V(v[0], v[1], v[2]) * 1000.0;
 
-		sv.R = mul(Rot, sv.R);
-		sv.V = mul(Rot, sv.V);
+		sv.R = mul(M_TEME_PEF, sv.R);
+		sv.V = mul(M_TEME_PEF, sv.V);
 
-		//J2000 to TEG
-		Rot = mul(OrbMech::tmat(sescnst.M_TEG_TO_M50), OrbMech::M_J2000_to_M50);
+		// Convert from Earth fixed to TEG
+		sv.GMT = (OrbMech::JD2MJD(JD_UTC) - sescnst.GMTBASE) * 86400.0;
 
-		sv.R = mul(Rot, sv.R);
-		sv.V = mul(Rot, sv.V);
-		sv.GMT = (mjd_cur - sescnst.GMTBASE) * 24.0 * 3600.0; //MJD to GMT
+		if (sescnst.TimeSystem == 2)
+		{
+			// Convert from UTC to TDB
+			sv.GMT += sescnst.EDT;
+		}
 
+		MATRIX3 M_EF_TEG = OrbMech::TEG_to_EF_Matrix(globcnst, sv.GMT);
+
+		sv.R = tmul(M_EF_TEG, sv.R);
+		sv.V = tmul(M_EF_TEG, sv.V);
 
 		//Line 4: Weight
 		std::getline(myfile, line);

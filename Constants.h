@@ -29,4 +29,10 @@ namespace OrbMech
 	const double AU = 149597870700.0;			/// Astronomical unit in degrees
 	const double LBS = 0.45359237;				/// 1 lbs in kg
 	const double FT2M = 0.3048;					/// 1 ft in meters
+	const double ARC_SEC = RAD / 3600.0;		/// 1 arc second to radians
+	const double JULIAN_CENTURY = 36525.0;		/// Julian centuries to mean solar days
+	const double RAD_PER_SEC_TIME = PI2 / 86400.0;
+	const double JULIAN_DATE_1900 = 2415020.0;
+	const double JULIAN_DATE_1950 = 2433282.4236;
+	const double JULIAN_DATE_2000 = 2451545.0;
 }

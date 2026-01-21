@@ -1669,6 +1669,16 @@ namespace OrbMech
 		return ((a % 4 == 0 && a % 100 != 0) || a % 400 == 0);
 	}
 
+	double JD2MJD(double JD)
+	{
+		return JD - 2400000.5;
+	}
+
+	double MJD2JD(double MJD)
+	{
+		return MJD + 2400000.5;
+	}
+
 	void SS2HHMMSS(double val, double& hh, double& mm, double& ss)
 	{
 		val = round(val);
@@ -1745,6 +1755,298 @@ namespace OrbMech
 		Rot5 = _M(cos(L_ecl), 0.0, -sin(L_ecl), 0.0, 1.0, 0.0, sin(L_ecl), 0.0, cos(L_ecl));
 		Rot6 = _M(1.0, 0.0, 0.0, 0.0, cos(e_ecl), -sin(e_ecl), 0.0, sin(e_ecl), cos(e_ecl));
 		return mul(Rot5, Rot6);
+	}
+
+	MATRIX3 B1950InertialToPseudoBodyFixed(double MJD_UTC, double EDT)
+	{
+		// MJD_UTC = Reference MJD in UTC, days
+		// EDT = Ephemeris delta time, seconds
+
+		MATRIX3 P, N, R, RNP;
+		double julian_date_midnight_utc, julian_date_midnight_ut1, julian_date_midnight_tdt, centuries_ref_since_1900_ut1, centuries_ref_since_1900_tdt, centuries_ref_since_1950_tdt;
+		double nutation_in_longitude, true_obliquity, alpha_G;
+
+		// TIMES
+		// Calculate julian date (UTC)
+		julian_date_midnight_utc = MJD_UTC + 2400000.5;
+		// Assume UTC and UT1 are the same
+		julian_date_midnight_ut1 = julian_date_midnight_utc;
+		// Calculate TDT
+		julian_date_midnight_tdt = julian_date_midnight_utc + EDT / 86400.0;
+		// Julian centuries since 1900
+		centuries_ref_since_1900_ut1 = (julian_date_midnight_ut1 - JULIAN_DATE_1900) / JULIAN_CENTURY;
+		centuries_ref_since_1900_tdt = (julian_date_midnight_tdt - JULIAN_DATE_1900) / JULIAN_CENTURY;
+		// Julian centuries since 1950
+		centuries_ref_since_1950_tdt = (julian_date_midnight_tdt - JULIAN_DATE_1950) / JULIAN_CENTURY;
+
+		//MATRICES
+		// Calculate precession matrix
+		P = B1950InertialToMeanOfDate(centuries_ref_since_1950_tdt);
+		// Calculate nutation matrix
+		B1950MeanOfDateToTrueOfDate(centuries_ref_since_1900_tdt, N, nutation_in_longitude, true_obliquity);
+		// Calculate true Greenwich sideral time
+		alpha_G = B1950TrueSiderealTime(centuries_ref_since_1900_ut1, nutation_in_longitude, true_obliquity);
+		// Calculate rotation matrix
+		R = TrueOfDateToPseudoBodyFixed(alpha_G);
+		// Calculate complete matrix
+		RNP = mul(R, mul(N, P));
+
+		return RNP;
+	}
+
+	MATRIX3 B1950InertialToMeanOfDate(double T_U)
+	{
+		// T_U = Time in Julian centuries of 36525 days elapsed from 1950.0
+
+		double T_U2, T_U3, zeta, theta, xi;
+
+		T_U2 = T_U * T_U;
+		T_U3 = T_U2 * T_U;
+
+		// In units of arc seconds
+		zeta  = 2304.9969 * T_U + 0.302000 * T_U2 + 0.01808 * T_U3;
+		theta = 2004.2980 * T_U - 0.425936 * T_U2 - 0.04160 * T_U3;
+		xi    = 2304.9969 * T_U + 1.092999 * T_U2 + 0.01920 * T_U3;
+
+		// Convert to radians
+		zeta *= ARC_SEC;
+		theta *= ARC_SEC;
+		xi *= ARC_SEC;
+
+		return mul(R_Z(-PI05 - xi), mul(R_X(theta), R_Z(PI05 - zeta)));
+	}
+
+	void B1950MeanOfDateToTrueOfDate(double T, MATRIX3& N, double& nutation_in_longitude, double& true_obliquity)
+	{
+		// T = Time elapsed in Julian centures from noon ephemeris time on the day before January 1, 1900, to the date of interest
+
+		double eps_mean, dpsi, de, eps_true;
+
+		B1950SimplifiedNutationTheory(T, eps_mean, de, dpsi);
+		eps_true = eps_mean + de;
+
+		N = MeanOfDateToTrueOfDate(eps_mean, dpsi, eps_true);
+		nutation_in_longitude = dpsi;
+		true_obliquity = eps_true;
+	}
+
+	void B1950SimplifiedNutationTheory(double T, double& mean_obliquity, double& nutation_of_obliquity, double& nutation_in_longitude)
+	{
+		// T = Time elapsed in Julian centures from noon ephemeris time on the day before January 1, 1900, to the date of interest
+
+		double T2, T3, F, D, Omega;
+
+		T2 = T * T;
+		T3 = T2 * T;
+
+		mean_obliquity = (84428.26 - 46.845 * T - 0.0059 * T2 + 0.0181 * T3) * ARC_SEC;
+
+		// In degrees
+		F = 11.25088888888889 + 483202.02517 * T - 0.32111111111e-2 * T2 - 0.33333333333333e-6 * T3;
+		D = 350.737486111 + 445267.114217 * T - 0.14361111111e-2 * T2 + 0.1888888888889e-5 * T3;
+		Omega = 259.183275 - 1934.14200833 * T + 0.207777777777778e-2 * T2 + 0.22222222222222e-5 * T3;
+
+		// Convert to radians
+		F = fmod(F, 360.0) * RAD;
+		D = fmod(D, 360.0) * RAD;
+		Omega = fmod(Omega, 360.0) * RAD;
+
+		// In arc seconds
+		nutation_of_obliquity = 9.21 * cos(Omega) + 0.5522 * cos(2.0 * F - 2.0 * D + 2.0 * Omega);
+		nutation_in_longitude = -17.2327 * sin(Omega) - 1.2729 * sin(2.0 * F - 2.0 * D + 2.0 * Omega) + 0.2088 * sin(2.0 * Omega) - 0.2037 * sin(2.0 * F + 2.0 * Omega);
+	
+		// Convert to radians
+		nutation_of_obliquity *= ARC_SEC;
+		nutation_in_longitude *= ARC_SEC;
+	}
+
+	double B1950MeanSiderealTime(double T_U)
+	{
+		// INPUTS:
+		// UT1 = Greenwich universal time measured from epoch to time t
+		// T_U = Number of Julian centuries elapsed from 12 hours UT1 January 0, 1900 (JD = 2415020.0) to the UT1 time of epoch
+
+		double alpha_gm;
+
+		// Mean Greenwich sideral time in seconds
+		alpha_gm = 23925.836 + 8640184.542 * T_U + 0.0929 * T_U * T_U;
+		// Convert from seconds to radians
+		alpha_gm *= RAD_PER_SEC_TIME;
+		// Normalize
+		alpha_gm = fmod(alpha_gm, PI2);
+
+		return alpha_gm;
+	}
+
+	double B1950TrueSiderealTime(double T_U, double nutation_in_longitude, double true_obliquity)
+	{
+		// T_U = Number of Julian centuries elapsed from 12 hours UT1 January 0, 1900 (JD = 2415020.0) to the UT1 time of epoch
+
+		double alpha_g, DH, alpha_gm;
+
+		alpha_gm = B1950MeanSiderealTime(T_U);
+		DH = nutation_in_longitude * cos(true_obliquity);
+		alpha_g = alpha_gm + DH;
+		alpha_g = fmod(alpha_g, PI2);
+
+		return alpha_g;
+	}
+
+	MATRIX3 J2000InertialToMeanOfDate(double t)
+	{
+		// t = time in Julian centuries between J2000 and the data epoch
+
+		double t2, t3, zeta, theta, xi;
+
+		t2 = t * t;
+		t3 = t2 * t;
+
+		zeta  = 2306.2181 * t + 0.30188 * t2 + 0.017998 * t3;
+		theta = 2004.3109 * t - 0.42665 * t2 - 0.041833 * t3;
+		xi    = 2306.2181 * t + 1.09468 * t2 + 0.018203 * t3;
+
+		// Convert to radians
+		zeta *= ARC_SEC;
+		theta *= ARC_SEC;
+		xi *= ARC_SEC;
+
+		return mul(R_Z(-PI05 - xi), mul(R_X(theta), R_Z(PI05 - zeta)));
+	}
+
+	MATRIX3 J2000MeanOfDateToTrueOfDate(double T)
+	{
+		// T = Time in Julian centuries of 36525 days elapsed from J2000.0
+
+		double eps_mean, de, dpsi, eps_true;
+
+		J2000SimplifiedNutationTheory(T, eps_mean, de, dpsi);
+		eps_true = eps_mean + de;
+
+		return MeanOfDateToTrueOfDate(eps_mean, dpsi, eps_true);
+	}
+
+	void J2000SimplifiedNutationTheory(double T, double& mean_obliquity, double& nutation_of_obliquity, double& nutation_in_longitude)
+	{
+		// T = Time in Julian centuries of 36525 days elapsed from J2000.0
+
+		double T2, T3, Omega, L, L_apo;
+
+		T2 = T * T;
+		T3 = T2 * T;
+
+		// In degrees
+		mean_obliquity = 23.43929111 - 0.0130047 * T - 0.1639e-6 * T2 + 0.5036e-6 * T3;
+		Omega = 125.04452 - 1934.136261 * T + 0.0020708 * T2 + T3 * (1.0 / 450000.0);
+		L = 280.4665 + 36000.7698 * T;
+		L_apo = 218.3165 + 481267.8813 * T;
+
+		// Convert to radians
+		Omega *= RAD;
+		L *= RAD;
+		L_apo *= RAD;
+
+		// In arc seconds
+		nutation_in_longitude = -17.2 * sin(Omega) - 1.32 * sin(2.0 * L) - 0.23 * sin(2.0 * L_apo) + 0.21 * sin(2.0 * Omega);
+		nutation_of_obliquity = 9.2 * cos(Omega) + 0.57 * cos(2.0 * L) + 0.1 * cos(2.0 * L_apo) - 0.09 * cos(2.0 * Omega);
+
+		// Convert to radians
+		mean_obliquity *= RAD;
+		nutation_in_longitude *= ARC_SEC;
+		nutation_of_obliquity *= ARC_SEC;
+	}
+
+	double J2000MeanSiderealTime(double T_U)
+	{
+		// T_U = Number of UT Julian centuries elapsed from epoch J2000.0 to 0h UT1 of the date
+
+		double alpha_gm;
+
+		alpha_gm = -6.2e-6 * T_U * T_U * T_U + 0.093104 * T_U * T_U + (876600.0 * 3600.0 + 8640184.812866) * T_U + 67310.54841;
+		
+		// Convert to radians
+		alpha_gm = fmod(alpha_gm * RAD_PER_SEC_TIME, PI2);
+
+		return alpha_gm;
+	}
+
+	MATRIX3 MeanOfDateToTrueOfDate(double eps_mean, double dpsi, double eps_true)
+	{
+		// eps_mean = mean obliquity [rad]
+		// dpsi = nutation in longitude [rad]
+		// eps_true = true obliquity [rad]
+
+		MATRIX3 Rot;
+		double cem, sem, cp, sp, cet, set;
+
+		cem = cos(eps_mean);
+		sem = sin(eps_mean);
+		cp = cos(dpsi);
+		sp = sin(dpsi);
+		cet = cos(eps_true);
+		set = sin(eps_true);
+
+		Rot.m11 = cp;
+		Rot.m12 = -sp * cem;
+		Rot.m13 = -sp * sem;
+		Rot.m21 = sp * cet;
+		Rot.m22 = cp * cet * cem + set * sem;
+		Rot.m23 = cp * cet * sem - set * cem;
+		Rot.m31 = sp * set; // GTDS had cet instead of set
+		Rot.m32 = cp * set * cem - cet * sem;
+		Rot.m33 = cp * set * sem + cet * cem;
+
+		return Rot;
+	}
+
+	MATRIX3 TrueOfDateToPseudoBodyFixed(double alpha_g)
+	{
+		return R_Z(alpha_g);
+	}
+
+	MATRIX3 TEMEToPseudoBodyFixed(double JD_UTC)
+	{
+		// JD_UTC = Julian date (UTC)
+
+		double JD_UT1, T_U, theta_GMST_1982;
+
+		// Assume they are the same
+		JD_UT1 = JD_UTC;
+		// Calculate time since J2000 in Julian centuries
+		T_U = (JD_UT1 - JULIAN_DATE_2000) / JULIAN_CENTURY;
+		// Calculate Greenwich mean sidereal time
+		theta_GMST_1982 = J2000MeanSiderealTime(T_U);
+		// Calculate conversion matrix
+		return R_Z(theta_GMST_1982);
+	}
+
+	MATRIX3 TEG_to_EF_Matrix(const GlobalConstants& cnst, double gmt)
+	{
+		double CL, SL;
+
+		CL = cos(gmt * cnst.w_E);
+		SL = sin(gmt * cnst.w_E);
+
+		return _M(CL, SL, 0.0, -SL, CL, 0.0, 0.0, 0.0, 1.0);
+	}
+
+	MATRIX3 R_X(double a)
+	{
+		double ca, sa;
+
+		ca = cos(a);
+		sa = sin(a);
+
+		return _M(1.0, 0.0, 0.0, 0.0, ca, sa, 0.0, -sa, ca);
+	}
+
+	MATRIX3 R_Z(double a)
+	{
+		double ca, sa;
+
+		ca = cos(a);
+		sa = sin(a);
+
+		return _M(ca, sa, 0.0, -sa, ca, 0.0, 0.0, 0.0, 1.0);
 	}
 
 	double acos2(double _X)

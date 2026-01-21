@@ -54,8 +54,8 @@ public:
     void OnButton_StateVector_Save(wxCommandEvent& event);
     void OnButton_StateVector_New(wxCommandEvent& event);
     void CalculateDayOfYear(wxCommandEvent& event);
+    void CalculateEphemerisDT(wxCommandEvent& event);
     void OnButton_LWP_LVDC_Export(wxCommandEvent& event);
-    void OnButton_LWP_SSV_Export(wxCommandEvent& event);
     void OnButton_View_MCT(wxCommandEvent& event);
     void OnButton_Save_MCT(wxCommandEvent& event);
     void OnButton_FDOMFD_Export(wxCommandEvent& event);
@@ -123,6 +123,7 @@ private:
     wxTextCtrl* textYear;
     wxTextCtrl* textMonth;
     wxTextCtrl* textDay;
+    wxTextCtrl* textDETUTC;
     wxTextCtrl* textDayOfYear;
 
     //LWP page

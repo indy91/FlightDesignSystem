@@ -348,6 +348,8 @@ namespace ShuttleLWP
 		lwin.GAMINS = in.GAMINS;
 		lwin.PFA = in.PFA;
 		lwin.PFT = in.PFT;
+		lwin.LATLS = in.LATLS;
+		lwin.LONGLS = in.LONGLS;
 		lwin.NS = in.NS;
 		lwin.DAY = 0;
 		lwin.LPT = 0;
@@ -437,6 +439,8 @@ namespace ShuttleLWP
 		lwin.GAMINS = in.GAMINS;
 		lwin.PFA = in.PFA;
 		lwin.PFT = in.PFT;
+		lwin.LATLS = in.LATLS;
+		lwin.LONGLS = in.LONGLS;
 		lwin.DAY = 0;
 		lwin.LPT = 0;
 		lwin.STABLE = false;
