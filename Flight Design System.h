@@ -58,6 +58,7 @@ public:
     void OnButton_LWP_LVDC_Export(wxCommandEvent& event);
     void OnButton_View_MCT(wxCommandEvent& event);
     void OnButton_Save_MCT(wxCommandEvent& event);
+    void OnButton_MCT_Load_Template(wxCommandEvent& event);
     void OnButton_FDOMFD_Export(wxCommandEvent& event);
     void OnCombo_ShuttleLWP_Launchpad(wxCommandEvent& event);
     void OnButton_ShuttleLWP_LWP_Execute(wxCommandEvent& event);
@@ -96,6 +97,7 @@ private:
     void UpdateOrbitData();
     int SetConstants();
     void ShuttleLWP_Execute(bool IsLW);
+    void ViewMCT(const wxString &filepath);
 
     // Text parsing
     int GetInteger(wxTextCtrl* text, const wxString& name, int* val);

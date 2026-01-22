@@ -206,6 +206,7 @@ namespace OMP
 		else if (buf == "YAW") return OMP::OMPDefs::SECONDARIES::YAW;
 		else if (buf == "PHA") return OMP::OMPDefs::SECONDARIES::PHA;
 		else if (buf == "WEDG") return OMP::OMPDefs::SECONDARIES::WEDG;
+		else if (buf == "ELA") return OMP::OMPDefs::SECONDARIES::ELA;
 		else return OMP::OMPDefs::SECONDARIES::NOSEC;
 	}
 

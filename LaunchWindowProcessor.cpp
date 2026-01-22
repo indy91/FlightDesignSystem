@@ -743,6 +743,7 @@ namespace LWP
 							NSERT(common.GMTLO);
 							ANGLE = common.PA - inp.OFFSET;
 							common.GMTLO = common.GMTLO - ANGLE / coe_T.LDOT;
+							ITER++;
 							if (ITER > lwpconst.CMAX)
 							{
 								Error = -1;

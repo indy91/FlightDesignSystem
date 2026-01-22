@@ -53,6 +53,7 @@ enum
     ID_Button_LWP_LVDC_Export,
     ID_Button_MCT_View,
     ID_Button_MCT_Save,
+    ID_Button_MCT_Load_Template,
     ID_Button_FDOMFD_Export,
     wxID_comboShuttleLWP_Launchpad,
     ID_Button_Shuttle_LWP_Execute,
@@ -85,6 +86,7 @@ EVT_CHOICE(ID_World, FDSFrame::CalculateDayOfYear)
 EVT_BUTTON(ID_Button_LWP_LVDC_Export, FDSFrame::OnButton_LWP_LVDC_Export)
 EVT_BUTTON(ID_Button_MCT_View, FDSFrame::OnButton_View_MCT)
 EVT_BUTTON(ID_Button_MCT_Save, FDSFrame::OnButton_Save_MCT)
+EVT_BUTTON(ID_Button_MCT_Load_Template, FDSFrame::OnButton_MCT_Load_Template)
 EVT_BUTTON(ID_Button_FDOMFD_Export, FDSFrame::OnButton_FDOMFD_Export)
 EVT_CHOICE(wxID_comboShuttleLWP_Launchpad, FDSFrame::OnCombo_ShuttleLWP_Launchpad)
 EVT_BUTTON(ID_Button_Shuttle_LWP_Execute, FDSFrame::OnButton_ShuttleLWP_LWP_Execute)
@@ -1171,6 +1173,9 @@ void FDSFrame::AddOMPPage()
     textOMP_MCT_Editor->SetColLabelValue(10, "Secondary 7");
     textOMP_MCT_Editor->SetColLabelValue(11, "Secondary 8");
     textOMP_MCT_Editor->SetColLabelValue(12, "Secondary 9");
+
+    new wxButton(panel3, ID_Button_MCT_Load_Template, wxT("Load Template"),
+        wxPoint(450, 350), wxDefaultSize);
 
     new wxButton(panel3, ID_Button_MCT_Save, wxT("Save"),
         wxPoint(450, 414), wxDefaultSize);
@@ -2552,6 +2557,11 @@ void FDSFrame::OnButton_View_MCT(wxCommandEvent& event)
         return;
     }
 
+    ViewMCT(filepath);
+}
+
+void FDSFrame::ViewMCT(const wxString& filepath)
+{
     wxTextFile file(filepath);
     if (!file.Open())
     {
@@ -2662,6 +2672,23 @@ void FDSFrame::OnButton_Save_MCT(wxCommandEvent& event)
     file.Close();
 
     SetStatusText("MCT file saved!");
+}
+
+void FDSFrame::OnButton_MCT_Load_Template(wxCommandEvent& event)
+{
+    wxString workingDir = wxGetCwd();
+    wxString caption = "Choose a MCT template";
+    wxString wildcard = "Text files (*.txt)|*.txt";
+    wxString defaultDir = workingDir + "\\Templates\\OMP";
+    wxString defaultFilename = wxEmptyString;
+
+    wxFileDialog dialog(this, caption, defaultDir, defaultFilename, wildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+    if (dialog.ShowModal() != wxID_OK) return;
+
+    wxString path = dialog.GetPath();
+
+    ViewMCT(path);
 }
 
 void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)
