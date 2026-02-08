@@ -28,7 +28,7 @@ namespace ShuttleLWP
 		CAREA = 2500.0 * pow(OrbMech::FT2M, 2);
 		CWHT = 251679.0 * OrbMech::LBS;
 		NS = 0;
-		LATLS = 28.627 * OrbMech::RAD;
+		LATD = 28.627 * OrbMech::RAD;
 		LONGLS = 279.379 * OrbMech::RAD;
 		PFT = 8.0 * 60.0 + 30.0;
 		PFA = 14.4 * OrbMech::RAD;
@@ -348,7 +348,7 @@ namespace ShuttleLWP
 		lwin.GAMINS = in.GAMINS;
 		lwin.PFA = in.PFA;
 		lwin.PFT = in.PFT;
-		lwin.LATLS = in.LATLS;
+		lwin.LATLS = OrbMech::Geodetic_to_Geocentric_Latitude(globconst, in.LATD);
 		lwin.LONGLS = in.LONGLS;
 		lwin.NS = in.NS;
 		lwin.DAY = 0;
@@ -439,7 +439,7 @@ namespace ShuttleLWP
 		lwin.GAMINS = in.GAMINS;
 		lwin.PFA = in.PFA;
 		lwin.PFT = in.PFT;
-		lwin.LATLS = in.LATLS;
+		lwin.LATLS = OrbMech::Geodetic_to_Geocentric_Latitude(globconst, in.LATD);
 		lwin.LONGLS = in.LONGLS;
 		lwin.DAY = 0;
 		lwin.LPT = 0;
@@ -600,7 +600,7 @@ namespace ShuttleLWP
 		// Calculate launch azimuth
 		double arg, beta;
 
-		arg = cos(coe_mean_T.i) / cos(inp.LATLS);
+		arg = cos(coe_mean_T.i) / cos(OrbMech::Geodetic_to_Geocentric_Latitude(globconst, inp.LATD));
 		if (abs(arg) > 1.0)
 		{
 			if (arg > 1.0)
@@ -708,10 +708,12 @@ namespace ShuttleLWP
 
 	VECTOR3 ShuttleLaunchWindowProcessor::GetURLS(double GMTLO) const
 	{
+		VECTOR3 R_TEG;
 		double LONG;
 
 		LONG = inp.LONGLS + globconst.w_E * GMTLO;
-		return _V(cos(inp.LATLS) * cos(LONG), cos(inp.LATLS) * sin(LONG), sin(inp.LATLS));
+
+		return OrbMech::GEODETIC_TO_EF(globconst, inp.LATD, LONG, 0.0);
 	}
 
 	double ShuttleLaunchWindowProcessor::PHANG(const OrbMech::StateVector& sv_C, const OrbMech::StateVector& sv_T, bool wrapped) const

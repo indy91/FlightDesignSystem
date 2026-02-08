@@ -135,13 +135,17 @@ namespace OMP
 	{
 		//Header
 
-		//Chaser state vector GMT
+		// Chaser state vector GMT
 		double GMT_C;
-		//Targer state vector GMT
+		// Targer state vector GMT
 		double GMT_T;
-		//Total accumulated chaser DV
+		// Total plan DV magnitude for the chaser
+		double DVtot_C;
+		// Total plan DV magnitude for the target
+		double DVtot_T;
+		// Total accumulated chaser DV
 		VECTOR3 dv_C;
-		//Total accumulated chaser DV
+		// Total accumulated target DV
 		VECTOR3 dv_T;
 
 		std::vector<MANEVALDATA> Maneuvers;
@@ -225,7 +229,7 @@ namespace OMP
 		int FindOrbitalMidnightRelativeTime(OrbMech::StateVector sv0, bool midnight, double dt1, OrbMech::StateVector& sv_out);
 
 		//Maneuvers
-		bool HeightManeuverAuto(OrbMech::StateVector sv_A, double r_D, bool horizontal, VECTOR3& DV, double dv_guess = 0.0);
+		bool HeightManeuverAuto(OrbMech::StateVector sv_A, double r_D, bool horizontal, VECTOR3& DV);
 		int Lambert(OrbMech::StateVector sv_A1, VECTOR3 RP2_off, double dt, VECTOR3& V_A1_apo);
 		int SOIManeuver(OrbMech::StateVector sv_A1, OrbMech::StateVector sv_P, double dt, VECTOR3 off, VECTOR3& DV);
 		int SORManeuver(OrbMech::StateVector sv_A1, OrbMech::StateVector sv_P, VECTOR3 off, VECTOR3& DV);

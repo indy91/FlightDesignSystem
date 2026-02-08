@@ -1254,7 +1254,7 @@ int OrbitalManeuverProcessor::ApplyManeuver()
 	if (ManeuverConstraintsTable[CurMan].type == OMPDefs::MANTYPE::HA)
 	{
 		VECTOR3 DV;
-		if (HeightManeuverAuto(ManeuverData[CurMan].sv_A_bef_table, constants.R_E_equ + ManeuverData[CurMan].add_constraint.x, true, DV, ManeuverData[CurMan].dv_table.x))
+		if (HeightManeuverAuto(ManeuverData[CurMan].sv_A_bef_table, constants.R_E_equ + ManeuverData[CurMan].add_constraint.x, true, DV))
 		{
 			return 28;	//HA maneuver failed to converge
 		}
@@ -1497,6 +1497,7 @@ void OrbitalManeuverProcessor::CalculateManeuverEvalTable(OrbMech::StateVector s
 	sv_P_cur = sv_P0;
 
 	ManeuverEvaluationTable.Maneuvers.clear();
+	ManeuverEvaluationTable.DVtot_C = ManeuverEvaluationTable.DVtot_T = 0.0;
 	ManeuverEvaluationTable.dv_C = ManeuverEvaluationTable.dv_T = _V(0, 0, 0);
 
 	ManeuverEvaluationTable.GMT_C = sv_A0.GMT;
@@ -1519,6 +1520,7 @@ void OrbitalManeuverProcessor::CalculateManeuverEvalTable(OrbMech::StateVector s
 			ManeuverEvaluationTable.dv_C.x += abs(ManeuverTable[i].dV_LVLH.x);
 			ManeuverEvaluationTable.dv_C.y += abs(ManeuverTable[i].dV_LVLH.y);
 			ManeuverEvaluationTable.dv_C.z += abs(ManeuverTable[i].dV_LVLH.z);
+			ManeuverEvaluationTable.DVtot_C += length(ManeuverTable[i].dV_LVLH);
 		}
 		else
 		{
@@ -1528,6 +1530,7 @@ void OrbitalManeuverProcessor::CalculateManeuverEvalTable(OrbMech::StateVector s
 			ManeuverEvaluationTable.dv_T.x += abs(ManeuverTable[i].dV_LVLH.x);
 			ManeuverEvaluationTable.dv_T.y += abs(ManeuverTable[i].dV_LVLH.y);
 			ManeuverEvaluationTable.dv_T.z += abs(ManeuverTable[i].dV_LVLH.z);
+			ManeuverEvaluationTable.DVtot_T += length(ManeuverTable[i].dV_LVLH);
 		}
 
 		//Calculate maneuver parameters
@@ -1625,6 +1628,8 @@ void OrbitalManeuverProcessor::CalculateManeuverEvalTable(OrbMech::StateVector s
 		ManeuverEvaluationTable.Maneuvers.push_back(man);
 	}
 
+	ManeuverEvaluationTable.DVtot_C /= 0.3048;
+	ManeuverEvaluationTable.DVtot_T /= 0.3048;
 	ManeuverEvaluationTable.dv_C /= 0.3048;
 	ManeuverEvaluationTable.dv_T /= 0.3048;
 }
@@ -2330,8 +2335,11 @@ int OrbitalManeuverProcessor::FindOrbitalMidnightRelativeTime(OrbMech::StateVect
 	return 0;
 }
 
-bool OrbitalManeuverProcessor::HeightManeuverAuto(OrbMech::StateVector sv_A, double r_D, bool horizontal, VECTOR3& DV, double dv_guess)
+bool OrbitalManeuverProcessor::HeightManeuverAuto(OrbMech::StateVector sv_A, double r_D, bool horizontal, VECTOR3& DV)
 {
+	// INPUTS:
+	// horizontal: true = horizontal DV, false = null altitude rate
+
 	OrbMech::StateVector sv_A_apo, sv_D;
 	OrbMech::OELEMENTS coe;
 	VECTOR3 am, U_hor;
@@ -2365,14 +2373,7 @@ bool OrbitalManeuverProcessor::HeightManeuverAuto(OrbMech::StateVector sv_A, dou
 	}
 
 	//Initial guess
-	if (horizontal)
-	{
-		v_H = dv_guess;
-	}
-	else
-	{
-		v_H = sqrt(2.0 * constants.mu / (length(sv_A.R) * (1.0 + length(sv_A.R) / r_D)));
-	}
+	v_H = sqrt(2.0 * constants.mu / (length(sv_A.R) * (1.0 + length(sv_A.R) / r_D)));
 
 	do
 	{
@@ -2710,11 +2711,11 @@ void OrbitalManeuverProcessor::PrintManeuverEvaluationTable()
 	sprintf_s(Buffer, "TARGET   %s   %s", Buffer2, OMPTargetFile.c_str());
 	outarray.push_back(Buffer);
 	outarray.push_back("");
-	sprintf_s(Buffer, "  CHASER  DVtot = %7.2lf  DVx = %7.2lf  DVy = %7.2lf  DVz = %7.2lf", length(ManeuverEvaluationTable.dv_C),
+	sprintf_s(Buffer, "  CHASER  DVtot = %7.2lf  DVx = %7.2lf  DVy = %7.2lf  DVz = %7.2lf", ManeuverEvaluationTable.DVtot_C,
 		ManeuverEvaluationTable.dv_C.x, ManeuverEvaluationTable.dv_C.y, ManeuverEvaluationTable.dv_C.z);
 	outarray.push_back(Buffer);
 
-	sprintf_s(Buffer, "  TARGET  DVtot = %7.2lf  DVx = %7.2lf  DVy = %7.2lf  DVz = %7.2lf", length(ManeuverEvaluationTable.dv_T),
+	sprintf_s(Buffer, "  TARGET  DVtot = %7.2lf  DVx = %7.2lf  DVy = %7.2lf  DVz = %7.2lf", ManeuverEvaluationTable.DVtot_T,
 		ManeuverEvaluationTable.dv_T.x, ManeuverEvaluationTable.dv_T.y, ManeuverEvaluationTable.dv_T.z);
 	outarray.push_back(Buffer);
 

@@ -693,7 +693,7 @@ void FDSFrame::AddShuttleLWPPage()
     Y += diffY;
 
     new wxStaticText(panel_Init, wxID_ANY, "VEL", wxPoint(minX, Y + difftext));
-    Add(text_ShuttleLWP_VEL = new wxTextCtrl(panel_Init, wxID_ANY, "25928.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/VEL");
+    Add(text_ShuttleLWP_VEL = new wxTextCtrl(panel_Init, wxID_ANY, "25819.0", wxPoint(minX + diffX, Y)), "/ShuttleLWP/VEL");
     text_ShuttleLWP_VEL->SetToolTip(wxT("Velocity of insertion"));
     new wxStaticText(panel_Init, wxID_ANY, "fps", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
@@ -827,7 +827,7 @@ void FDSFrame::AddShuttleLWPPage()
     new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "HT", wxPoint(minX, Y + difftext));
     for (int i = 0; i < 4; i++)
     {
-        Add(textShuttleLWP_OMS1_HT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "158.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS1_HT_" + wxString::Format("%d", i));
+        Add(textShuttleLWP_OMS1_HT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "120.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS1_HT_" + wxString::Format("%d", i));
         textShuttleLWP_OMS1_HT[i]->SetToolTip("Height for OMS-1");
     }
     Y += diffY;
@@ -835,7 +835,7 @@ void FDSFrame::AddShuttleLWPPage()
     new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "THETA-T", wxPoint(minX, Y + difftext));
     for (int i = 0; i < 4; i++)
     {
-        Add(textShuttleLWP_OMS1_THETAT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "154.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS1_THETAT_" + wxString::Format("%d", i));
+        Add(textShuttleLWP_OMS1_THETAT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "133.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS1_THETAT_" + wxString::Format("%d", i));
         textShuttleLWP_OMS1_THETAT[i]->SetToolTip("Theta-T for OMS-1");
     }
     Y += diffY;
@@ -846,7 +846,7 @@ void FDSFrame::AddShuttleLWPPage()
     new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "DTIG", wxPoint(minX, Y + difftext));
     for (int i = 0; i < 4; i++)
     {
-        Add(textShuttleLWP_OMS2_DTIG[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "0:00:35:01.000", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS2_DTIG_" + wxString::Format("%d", i));
+        Add(textShuttleLWP_OMS2_DTIG[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "0:00:31:17.000", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS2_DTIG_" + wxString::Format("%d", i));
         textShuttleLWP_OMS2_DTIG[i]->SetToolTip("Time from MECO to OMS-1");
     }
     Y += diffY;
@@ -870,7 +870,7 @@ void FDSFrame::AddShuttleLWPPage()
     new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "HT", wxPoint(minX, Y + difftext));
     for (int i = 0; i < 4; i++)
     {
-        Add(textShuttleLWP_OMS2_HT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "110.8", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS2_HT_" + wxString::Format("%d", i));
+        Add(textShuttleLWP_OMS2_HT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "93.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS2_HT_" + wxString::Format("%d", i));
         textShuttleLWP_OMS2_HT[i]->SetToolTip("Height for OMS-2");
     }
     Y += diffY;
@@ -878,7 +878,7 @@ void FDSFrame::AddShuttleLWPPage()
     new wxStaticText(panel_LNCH_REF_TGT_SETS, wxID_ANY, "THETA-T", wxPoint(minX, Y + difftext));
     for (int i = 0; i < 4; i++)
     {
-        Add(textShuttleLWP_OMS2_THETAT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "338.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS2_THETAT_" + wxString::Format("%d", i));
+        Add(textShuttleLWP_OMS2_THETAT[i] = new wxTextCtrl(panel_LNCH_REF_TGT_SETS, wxID_ANY, "326.0", wxPoint(minX + diffX + diffXSets * i, Y)), "/ShuttleLWP/OMS2_THETAT_" + wxString::Format("%d", i));
         textShuttleLWP_OMS2_THETAT[i]->SetToolTip("Theta-T for OMS-2");
     }
     Y += diffY;

@@ -366,7 +366,7 @@ int Core::RunShuttleLWP(bool IsLW, std::string strInputs[], double* dInputs, int
 	in.CCD = dInputs[1];
 	in.CAREA = dInputs[2] * pow(OrbMech::FT2M, 2);
 	in.CWHT = dInputs[3] * OrbMech::LBS;
-	in.LATLS = dInputs[4] * OrbMech::RAD;
+	in.LATD = dInputs[4] * OrbMech::RAD;
 	in.LONGLS = dInputs[5] * OrbMech::RAD;
 	in.PFT = dInputs[7];
 	in.PFA = dInputs[6] * OrbMech::RAD;
@@ -643,8 +643,12 @@ int Core::ShuttleLTPExport()
 	myfile << "Velocity (m/s) " << buf << std::endl;
 	sprintf_s(buf, "%.4lf", LTP_Outputs.GMECO * OrbMech::DEG);
 	myfile << "Flight Path Angle (deg) " << buf << std::endl;
+	sprintf_s(buf, "GMTLO Ref %.3lf", LTP_Outputs.GMTLO + sescnst.DayOfYear * 24.0 * 3600.0);
+	myfile << buf << std::endl;
 	sprintf_s(buf, "%.8lf %.8lf %.8lf", IY_MECO_M50.x, IY_MECO_M50.y, IY_MECO_M50.z);
 	myfile << "IY Vector (M50) " << buf << std::endl;
+	sprintf_s(buf, "Node Slope %e", LTP_Outputs.NODE_SLOPE);
+	myfile << buf << std::endl;
 
 	myfile << std::endl << "I-LOADS" << std::endl << std::endl;
 
@@ -1010,7 +1014,7 @@ int Core::SetGlobalConstants(int world)
 	else if (world == 1)
 	{
 		// SSV
-		globcnst.mu = 0.3986032e15;
+		globcnst.mu = 398600439968871.2;
 		globcnst.R_E = 6.37101e6;
 		globcnst.R_E_equ = 6378166.0;
 		globcnst.J2 = 1082.6269e-6;

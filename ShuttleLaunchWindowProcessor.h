@@ -42,8 +42,8 @@ namespace ShuttleLWP
 		double CAREA;
 		// Chaser vehicle weight at insertion
 		double CWHT;
-		// Geocentric latitude of launch site
-		double LATLS;
+		// Geodetic latitude of launch site
+		double LATD;
 		// Geographic longitude of launch site
 		double LONGLS;
 		// Powered flight time

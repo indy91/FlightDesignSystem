@@ -1198,6 +1198,28 @@ namespace OrbMech
 		sv_from_coe(el, mu, R, V);
 	}
 
+	VECTOR3 GEODETIC_TO_EF(const GlobalConstants& cnst, double LAT_GEOD, double LON, double ALT)
+	{
+		VECTOR3 u;
+		double gamma, SINL, R0;
+
+		gamma = cnst.b_sq / cnst.a_sq;
+		u = unit(_V(cos(LON) * cos(LAT_GEOD), sin(LON) * cos(LAT_GEOD), gamma * sin(LAT_GEOD)));
+		SINL = u.z;
+		R0 = sqrt(cnst.b_sq / (1.0 - (1.0 - cnst.b_sq / cnst.a_sq) * (1.0 - SINL * SINL)));
+
+		return u * (R0 + ALT);
+	}
+
+	double Geodetic_to_Geocentric_Latitude(const GlobalConstants& cnst, double LAT_GEOD)
+	{
+		VECTOR3 R_EF, u;
+
+		R_EF = GEODETIC_TO_EF(cnst, LAT_GEOD, 0.0, 0.0);
+		u = unit(R_EF);
+		return atan2(u.z, sqrt(u.x * u.x + u.y * u.y));
+	}
+
 	bool TLAT(VECTOR3 R, VECTOR3 V, double lat, int C, double& K_AD, double& dtheta)
 	{
 		VECTOR3 H, N;

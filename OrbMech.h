@@ -217,6 +217,8 @@ namespace OrbMech
 	double PHSANG(VECTOR3 R, VECTOR3 V, VECTOR3 RD);
 	double ArgLat(VECTOR3 R, VECTOR3 V);
 	void KeplerianToCartesian(CELEMENTS coe, double mu, VECTOR3& R, VECTOR3& V);
+	VECTOR3 GEODETIC_TO_EF(const GlobalConstants& cnst, double LAT_GEOD, double LON, double ALT);
+	double Geodetic_to_Geocentric_Latitude(const GlobalConstants& cnst, double LAT_GEOD);
 
 	bool TLAT(VECTOR3 R, VECTOR3 V, double lat, int C, double& K_AD, double& dtheta);
 	double TLON(VECTOR3 R, VECTOR3 V, double t, double lng, int C, double w_E);

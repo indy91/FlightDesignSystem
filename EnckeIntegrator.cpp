@@ -109,7 +109,7 @@ void EnckeIntegrator::IntegrationTerminationControlRoutine()
 	// 1. Integration step size selection
 	H = KK * length(RSTATE);
 	// 2. Termination control
-	if (DragIndicator)
+	if (DragIndicator && CSA != 0.0)
 	{
 		if (ALT < 50.0 * 1852.0)
 		{
