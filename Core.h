@@ -49,6 +49,9 @@ public:
 	// OMP
 	int ReadMCTFile(std::string file, std::vector<OMP::ManeuverConstraintsInput> &MCT) const;
 
+	// State vector converter
+	int StateVectorConverter(int* iInputs, double* dInputs, std::vector<std::string>& data);
+
 	OrbMech::SessionConstants* GetSessionConstants() {return &sescnst;}
 
 	bool IsInitialized() const;
@@ -68,6 +71,7 @@ protected:
 	//File parsing
 	void SaveStateVector(std::string file, const OrbMech::StateVector& sv);
 	int LoadStateVector(std::string file, OrbMech::StateVector& sv) const;
+	void StateVectorToString(const OrbMech::StateVector& sv, std::vector<std::string>& data) const;
 
 	//OMP
 	std::vector<OMP::ManeuverConstraintsInput> ManeuverConstraintsInput;

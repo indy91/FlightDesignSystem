@@ -1141,28 +1141,14 @@ void Core::SaveStateVector(std::string file, const OrbMech::StateVector& sv)
 	myfile.open(file);
 	if (myfile.is_open() == false) return;
 
-	char Buffer[256];
+	std::vector<std::string> data;
 
-	//Line 1: Coordinate system
-	myfile << "TEG" << std::endl;
-	//Line 2: Position vector
-	sprintf_s(Buffer, "%lf %lf %lf", sv.R.x, sv.R.y, sv.R.z);
-	myfile << Buffer << std::endl;
-	//Line 3: Velocity vector
-	sprintf_s(Buffer, "%lf %lf %lf", sv.V.x, sv.V.y, sv.V.z);
-	myfile << Buffer << std::endl;
-	//Line 4: Time
-	sprintf_s(Buffer, "%.3lf", sv.GMT);
-	myfile << Buffer << std::endl;
-	//Line 5: Weight
-	sprintf_s(Buffer, "%.4lf", sv.Weight / OrbMech::LBS);
-	myfile << Buffer << std::endl;
-	//Line 6: Area
-	sprintf_s(Buffer, "%.2lf", sv.Area / pow(OrbMech::FT2M, 2));
-	myfile << Buffer << std::endl;
-	//Line 7: K-Factor
-	sprintf_s(Buffer, "%.3lf", sv.KFactor);
-	myfile << Buffer << std::endl;
+	StateVectorToString(sv, data);
+
+	for (unsigned i = 0; i < data.size(); i++)
+	{
+		myfile << data[i] << std::endl;
+	}
 
 	myfile.close();
 }
@@ -1329,5 +1315,264 @@ int Core::LoadStateVector(std::string file, OrbMech::StateVector &sv) const
 	}
 
 	myfile.close();
+	return 0;
+}
+
+void Core::StateVectorToString(const OrbMech::StateVector& sv, std::vector<std::string>& data) const
+{
+	char Buffer[256];
+
+	data.clear();
+
+	//Line 1: Coordinate system
+	data.push_back("TEG");
+	//Line 2: Position vector
+	sprintf_s(Buffer, "%lf %lf %lf", sv.R.x, sv.R.y, sv.R.z);
+	data.push_back(Buffer);
+	//Line 3: Velocity vector
+	sprintf_s(Buffer, "%lf %lf %lf", sv.V.x, sv.V.y, sv.V.z);
+	data.push_back(Buffer);
+	//Line 4: Time
+	sprintf_s(Buffer, "%.3lf", sv.GMT);
+	data.push_back(Buffer);
+	//Line 5: Weight
+	sprintf_s(Buffer, "%.4lf", sv.Weight / OrbMech::LBS);
+	data.push_back(Buffer);
+	//Line 6: Area
+	sprintf_s(Buffer, "%.2lf", sv.Area / pow(OrbMech::FT2M, 2));
+	data.push_back(Buffer);
+	//Line 7: K-Factor
+	sprintf_s(Buffer, "%.3lf", sv.KFactor);
+	data.push_back(Buffer);
+}
+
+int Core::StateVectorConverter(int* iInputs, double* dInputs, std::vector<std::string>& data)
+{
+	// Get conversion factors from input to internal units
+	double ANG_CONV, DIST_CONV, VEL_CONV, MASS_CONV, LENGTH_CONV;
+
+	// Angles
+	switch (iInputs[2])
+	{
+	case 0: // Degrees
+		ANG_CONV = OrbMech::RAD;
+		break;
+	case 1: // Radians
+		ANG_CONV = 1.0;
+		break;
+	default:
+		return 1;
+	}
+
+	// Distance
+	switch (iInputs[3])
+	{
+	case 0: // Feet
+		DIST_CONV = OrbMech::FT2M;
+		break;
+	case 1: // Meters
+		DIST_CONV = 1.0;
+		break;
+	case 2: // Nautical miles
+		DIST_CONV = OrbMech::NM;
+		break;
+	case 3: // Earth radii
+		DIST_CONV = 6378165.0;
+		break;
+	case 4: // Kilometers
+		DIST_CONV = 0.001;
+		break;
+	default:
+		return 1;
+	}
+
+	// Velocity
+	switch (iInputs[4])
+	{
+	case 0: // Feet/second
+		VEL_CONV = OrbMech::FT2M;
+		break;
+	case 1: // Meters/second
+		VEL_CONV = 1.0;
+		break;
+	case 2: // Nautical miles/hour
+		VEL_CONV = OrbMech::NM / 3600.0;
+		break;
+	case 3: // Earth radii/hour
+		VEL_CONV = 6378165.0 / 3600.0;
+		break;
+	case 4: // Kilometers/hour
+		VEL_CONV = 1000.0 / 3600.0;
+		break;
+	default:
+		return 1;
+	}
+
+	// Mass
+	switch (iInputs[5])
+	{
+	case 0: // Pounds
+		MASS_CONV = OrbMech::LBS;
+		break;
+	case 1: // Kilograms
+		MASS_CONV = 1.0;
+		break;
+	case 2: // Slugs
+		MASS_CONV = 14.59390;
+		break;
+	default:
+		return 1;
+	}
+
+	// Length
+	switch (iInputs[6])
+	{
+	case 0: // Feet
+		LENGTH_CONV = OrbMech::FT2M;
+		break;
+	case 1: // Meters
+		LENGTH_CONV = 1.0;
+		break;
+	case 2: // Inches
+		LENGTH_CONV = 0.0254;
+		break;
+	default:
+		return 1;
+	}
+
+	// Convert state vector
+	OrbMech::StateVector sv_in, sv_out;
+
+	sv_in.GMT = dInputs[0];
+
+	if (iInputs[1] == 0)
+	{
+		// Cartesian
+		sv_in.R.x = dInputs[1] * DIST_CONV;
+		sv_in.R.y = dInputs[2] * DIST_CONV;
+		sv_in.R.z = dInputs[4] * DIST_CONV;
+		sv_in.V.x = dInputs[4] * VEL_CONV;
+		sv_in.V.y = dInputs[5] * VEL_CONV;
+		sv_in.V.z = dInputs[6] * VEL_CONV;
+	}
+	else if (iInputs[1] == 1)
+	{
+		// Orbital elements
+		OrbMech::CELEMENTS coe;
+
+		coe.a = dInputs[1] * DIST_CONV;
+		coe.e = dInputs[2];
+		coe.i = dInputs[3] * ANG_CONV;
+		coe.g = dInputs[4] * ANG_CONV;
+		coe.h = dInputs[5] * ANG_CONV;
+		coe.l = dInputs[6] * ANG_CONV;
+
+		if (coe.e >= 1.0) return 1;
+
+		OrbMech::KeplerianToCartesian(coe, globcnst.mu, sv_in.R, sv_in.V);
+	}
+	else if (iInputs[1] == 2)
+	{
+		// Spherical
+		double r, v, lat, lng, gamma, incl, azi;
+		bool AscNodeFlag;
+
+		r = dInputs[1] * DIST_CONV;
+		v = dInputs[2] * VEL_CONV;
+		gamma = dInputs[3] * ANG_CONV;
+		lat = dInputs[4] * ANG_CONV;
+		lng = dInputs[5] * ANG_CONV;
+		incl = dInputs[6] * ANG_CONV;
+
+		AscNodeFlag = true;
+		if (incl < 0.0)
+		{
+			incl = abs(incl);
+			AscNodeFlag = false;
+		}
+
+		if (abs(lat) > incl) return 1;
+
+		// Calculate azimuth
+		azi = asin(cos(incl) / cos(lat));
+		if (AscNodeFlag == false)
+		{
+			azi = OrbMech::PI - azi;
+		}
+
+		OrbMech::PICSSC(false, sv_in.R, sv_in.V, r, v, lat, lng, gamma, azi);
+	}
+	else if (iInputs[1] == 3)
+	{
+		// Apsides
+		double HA, HP, TA, lat, lng, incl, azi, RA, RP, a, e, p, r, v, gamma;
+		bool AscNodeFlag;
+
+		HA = dInputs[1] * DIST_CONV;
+		HP = dInputs[2] * DIST_CONV;
+		TA = dInputs[3] * ANG_CONV;
+		lat = dInputs[4] * ANG_CONV;
+		lng = dInputs[5] * ANG_CONV;
+		incl = dInputs[6] * ANG_CONV;
+
+		AscNodeFlag = true;
+		if (incl < 0.0)
+		{
+			incl = abs(incl);
+			AscNodeFlag = false;
+		}
+
+		if (abs(lat) > incl) return 1;
+
+		// Calculate azimuth
+		azi = asin(cos(incl) / cos(lat));
+		if (AscNodeFlag == false)
+		{
+			azi = OrbMech::PI - azi;
+		}
+
+		RA = HA + globcnst.R_E_equ;
+		RP = HP + globcnst.R_E_equ;
+		a = (RA + RP) / 2.0;
+		e = (RA - RP) / (RA + RP);
+
+		if (e >= 1.0) return 1;
+
+		p = a * (1.0 - e * e);
+		r = p / (1.0 + e * cos(TA));
+		v = sqrt(2.0 * (globcnst.mu / r - globcnst.mu / (2.0 * a)));
+		gamma = atan(e * sin(TA) / (1.0 + e * cos(TA)));
+
+		OrbMech::PICSSC(false, sv_in.R, sv_in.V, r, v, lat, lng, gamma, azi);
+	}
+	else return 1;
+
+	// K-Factor
+	sv_in.KFactor = dInputs[7];
+
+	// Area
+	sv_in.Area = dInputs[8] * pow(LENGTH_CONV, 2);
+
+	// Weight
+	sv_in.Weight = dInputs[9] * MASS_CONV;
+
+	// Convert to output coordinate system
+	sv_out = sv_in;
+	if (iInputs[0] == 0)
+	{
+		// TEG
+	}
+	else if (iInputs[0] == 1)
+	{
+		// Earth-fixed
+		MATRIX3 M_TEG_EF = OrbMech::TEG_to_EF_Matrix(globcnst, sv_in.GMT);
+
+		sv_out.R = tmul(M_TEG_EF, sv_in.R);
+		sv_out.V = tmul(M_TEG_EF, sv_in.V);
+	}
+	else return 1;
+
+	StateVectorToString(sv_out, data);
+
 	return 0;
 }

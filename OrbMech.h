@@ -219,6 +219,7 @@ namespace OrbMech
 	void KeplerianToCartesian(CELEMENTS coe, double mu, VECTOR3& R, VECTOR3& V);
 	VECTOR3 GEODETIC_TO_EF(const GlobalConstants& cnst, double LAT_GEOD, double LON, double ALT);
 	double Geodetic_to_Geocentric_Latitude(const GlobalConstants& cnst, double LAT_GEOD);
+	void PICSSC(bool vecinp, VECTOR3& R, VECTOR3& V, double& r, double& v, double& lat, double& lng, double& gamma, double& azi);
 
 	bool TLAT(VECTOR3 R, VECTOR3 V, double lat, int C, double& K_AD, double& dtheta);
 	double TLON(VECTOR3 R, VECTOR3 V, double t, double lng, int C, double w_E);

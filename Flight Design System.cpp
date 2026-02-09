@@ -61,6 +61,9 @@ enum
     ID_World,
     ID_Button_ShuttleLWP_Export,
     ID_Button_ShuttleLWP_SaveStateVector,
+    ID_LoadSVPageLabels,
+    ID_LoadSV_Convert,
+    ID_LoadSV_Save
 };
 
 BEGIN_EVENT_TABLE(FDSFrame, wxFrame)
@@ -93,6 +96,9 @@ EVT_BUTTON(ID_Button_Shuttle_LWP_Execute, FDSFrame::OnButton_ShuttleLWP_LWP_Exec
 EVT_BUTTON(ID_Button_Shuttle_LTP_Execute, FDSFrame::OnButton_ShuttleLWP_LTP_Execute)
 EVT_BUTTON(ID_Button_ShuttleLWP_Export, FDSFrame::OnButton_ShuttleLWP_Export)
 EVT_BUTTON(ID_Button_ShuttleLWP_SaveStateVector, FDSFrame::OnButtonShuttleLWPSaveStateVector)
+EVT_CHOICE(ID_LoadSVPageLabels, FDSFrame::ChangeLoadSVPageLabels)
+EVT_BUTTON(ID_LoadSV_Convert, FDSFrame::OnButtonLoadSVConvert)
+EVT_BUTTON(ID_LoadSV_Save, FDSFrame::OnButton_LoadSV_Save)
 END_EVENT_TABLE()
 
 bool MyApp::OnInit()
@@ -121,6 +127,7 @@ FDSFrame::FDSFrame(const wxString& title)
     panel3 = new wxPanel(notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, 2621440L, L"Tab 3 Contents");
     panel4 = new wxPanel(notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, 2621440L, L"Skylab LWP Contents");
     panel5 = new wxPanel(notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, 2621440L, L"SV Contents");
+    panel_LoadSV = new wxPanel(notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, 2621440L, L"Load SV Contents");
 
     notebook->AddPage(panel1, L"Config");
     notebook->AddPage(panel2, L"Generic LWP");
@@ -128,6 +135,7 @@ FDSFrame::FDSFrame(const wxString& title)
     notebook->AddPage(panel3, L"OMP");
     notebook->AddPage(panel4, L"Skylab LWP");
     notebook->AddPage(panel5, L"State Vectors");
+    notebook->AddPage(panel_LoadSV, "Load SV");
 
     // Set up the sizer for the panel
     wxBoxSizer* panelSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -150,6 +158,7 @@ FDSFrame::FDSFrame(const wxString& title)
     AddOMPPage();   
     AddSkylabLWPPage();
     AddStateVectorPage();
+    AddLoadSVPage();
 
     // Initialize with default inputs
     SetConstants();
@@ -1433,6 +1442,170 @@ void FDSFrame::AddStateVectorPage()
     textStateVectorOrbitData = new wxTextCtrl(panel5, wxID_ANY, "",
         wxPoint(minX, Y), wxSize(450, 160),
         wxTE_READONLY | wxTE_MULTILINE);
+}
+
+void FDSFrame::AddLoadSVPage()
+{
+    wxArrayString strings;
+    int minX, minY, diffX, diffY, counter, difftext, Y, diffunit;
+
+    minX = 10;
+    minY = 10;
+    diffX = 70;
+    diffY = 32;
+    counter = 0;
+    difftext = 4;
+    diffunit = 200;
+
+    Y = minY;
+
+    new wxStaticText(panel_LoadSV, wxID_ANY, "REFAX", wxPoint(minX, Y + difftext));
+    strings.Add(wxT("TEG"));
+    strings.Add(wxT("EFE"));
+    comboLoadSV_REFAX = new wxChoice(panel_LoadSV, wxID_ANY, wxPoint(minX + diffX, Y), wxDefaultSize, strings);
+    comboLoadSV_REFAX->SetToolTip("Reference axis. TEG = True Equator and Greenwich meridian of epoch. EFE = Earth-fixed equatorial of epoch");
+    comboLoadSV_REFAX->SetSelection(0);
+    strings.clear();
+    Y += diffY;
+
+    new wxStaticText(panel_LoadSV, wxID_ANY, "ELSET", wxPoint(minX, Y + difftext));
+    strings.Add(wxT("Cartesian"));
+    strings.Add(wxT("Elements"));
+    strings.Add(wxT("Spherical"));
+    strings.Add(wxT("Apsides"));
+    comboLoadSV_ELSET = new wxChoice(panel_LoadSV, ID_LoadSVPageLabels, wxPoint(minX + diffX, Y), wxDefaultSize, strings);
+    comboLoadSV_ELSET->SetToolTip("Element set");
+    comboLoadSV_ELSET->SetSelection(0);
+    strings.clear();
+    Y += diffY;
+
+    new wxStaticText(panel_LoadSV, wxID_ANY, "ANGUN", wxPoint(minX, Y + difftext));
+    strings.Add(wxT("Degrees"));
+    strings.Add(wxT("Radians"));
+    comboLoadSV_ANGUN = new wxChoice(panel_LoadSV, ID_LoadSVPageLabels, wxPoint(minX + diffX, Y), wxDefaultSize, strings);
+    comboLoadSV_ANGUN->SetToolTip("Angle units");
+    comboLoadSV_ANGUN->SetSelection(0);
+    strings.clear();
+    Y += diffY;
+
+    new wxStaticText(panel_LoadSV, wxID_ANY, "DSTUN", wxPoint(minX, Y + difftext));
+    strings.Add(wxT("Feet"));
+    strings.Add(wxT("Meters"));
+    strings.Add(wxT("Nautical miles"));
+    strings.Add(wxT("Earth radii"));
+    strings.Add(wxT("Kilometers"));
+    comboLoadSV_DSTUN = new wxChoice(panel_LoadSV, ID_LoadSVPageLabels, wxPoint(minX + diffX, Y), wxDefaultSize, strings);
+    comboLoadSV_DSTUN->SetToolTip("Distance units");
+    comboLoadSV_DSTUN->SetSelection(0);
+    strings.clear();
+    Y += diffY;
+
+    new wxStaticText(panel_LoadSV, wxID_ANY, "VELUN", wxPoint(minX, Y + difftext));
+    strings.Add(wxT("Feet/second"));
+    strings.Add(wxT("Meters/second"));
+    strings.Add(wxT("Nautical miles/hour"));
+    strings.Add(wxT("Earth radii/hour"));
+    strings.Add(wxT("Kilometers/hour"));
+    comboLoadSV_VELUN = new wxChoice(panel_LoadSV, ID_LoadSVPageLabels, wxPoint(minX + diffX, Y), wxDefaultSize, strings);
+    comboLoadSV_VELUN->SetToolTip("Velocity units");
+    comboLoadSV_VELUN->SetSelection(0);
+    strings.clear();
+    Y += diffY;
+
+    new wxStaticText(panel_LoadSV, wxID_ANY, "MASUN", wxPoint(minX, Y + difftext));
+    strings.Add(wxT("Pounds"));
+    strings.Add(wxT("Kilograms"));
+    strings.Add(wxT("Slugs"));
+    comboLoadSV_MASUN = new wxChoice(panel_LoadSV, ID_LoadSVPageLabels, wxPoint(minX + diffX, Y), wxDefaultSize, strings);
+    comboLoadSV_MASUN->SetToolTip("Mass units");
+    comboLoadSV_MASUN->SetSelection(0);
+    strings.clear();
+    Y += diffY;
+
+    new wxStaticText(panel_LoadSV, wxID_ANY, "LENUN", wxPoint(minX, Y + difftext));
+    strings.Add(wxT("Feet"));
+    strings.Add(wxT("Meters"));
+    strings.Add(wxT("Inches"));
+    comboLoadSV_LENUN = new wxChoice(panel_LoadSV, ID_LoadSVPageLabels, wxPoint(minX + diffX, Y), wxDefaultSize, strings);
+    comboLoadSV_LENUN->SetToolTip("Length units");
+    comboLoadSV_LENUN->SetSelection(0);
+    strings.clear();
+    Y += diffY;
+
+    minX += 256;
+    Y = minY;
+
+    staticLoadSV_Descriptions[0] = new wxStaticText(panel_LoadSV, wxID_ANY, "T", wxPoint(minX, Y + difftext));
+    textLoadSV_Array[0] = new wxTextCtrl(panel_LoadSV, wxID_ANY, "00:00:00.000", wxPoint(minX + diffX, Y));
+    textLoadSV_Array[0]->SetToolTip(wxT("Time in GMT"));
+    staticLoadSV_Units[0] = new wxStaticText(panel_LoadSV, wxID_ANY, "GMT", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    staticLoadSV_Descriptions[1] = new wxStaticText(panel_LoadSV, wxID_ANY, "X", wxPoint(minX, Y + difftext));
+    textLoadSV_Array[1] = new wxTextCtrl(panel_LoadSV, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    //textLoadSV_Array[1]->SetToolTip(wxT("TBD"));
+    staticLoadSV_Units[1] = new wxStaticText(panel_LoadSV, wxID_ANY, "feet", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    staticLoadSV_Descriptions[2] = new wxStaticText(panel_LoadSV, wxID_ANY, "Y", wxPoint(minX, Y + difftext));
+    textLoadSV_Array[2] = new wxTextCtrl(panel_LoadSV, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    //textLoadSV_Array[2]->SetToolTip(wxT("TBD"));
+    staticLoadSV_Units[2] = new wxStaticText(panel_LoadSV, wxID_ANY, "feet", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    staticLoadSV_Descriptions[3] = new wxStaticText(panel_LoadSV, wxID_ANY, "Z", wxPoint(minX, Y + difftext));
+    textLoadSV_Array[3] = new wxTextCtrl(panel_LoadSV, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    //textLoadSV_Array[3]->SetToolTip(wxT("TBD"));
+    staticLoadSV_Units[3] = new wxStaticText(panel_LoadSV, wxID_ANY, "feet", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    staticLoadSV_Descriptions[4] = new wxStaticText(panel_LoadSV, wxID_ANY, "XD", wxPoint(minX, Y + difftext));
+    textLoadSV_Array[4] = new wxTextCtrl(panel_LoadSV, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    staticLoadSV_Units[4] = new wxStaticText(panel_LoadSV, wxID_ANY, "ft/sec", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    staticLoadSV_Descriptions[5] = new wxStaticText(panel_LoadSV, wxID_ANY, "YD", wxPoint(minX, Y + difftext));
+    textLoadSV_Array[5] = new wxTextCtrl(panel_LoadSV, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    staticLoadSV_Units[5] = new wxStaticText(panel_LoadSV, wxID_ANY, "ft/sec", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    staticLoadSV_Descriptions[6] = new wxStaticText(panel_LoadSV, wxID_ANY, "ZD", wxPoint(minX, Y + difftext));
+    textLoadSV_Array[6] = new wxTextCtrl(panel_LoadSV, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    staticLoadSV_Units[6] = new wxStaticText(panel_LoadSV, wxID_ANY, "ft/sec", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    staticLoadSV_Descriptions[7] = new wxStaticText(panel_LoadSV, wxID_ANY, "K-Factor", wxPoint(minX, Y + difftext));
+    textLoadSV_Array[7] = new wxTextCtrl(panel_LoadSV, wxID_ANY, "1.0", wxPoint(minX + diffX, Y));
+    staticLoadSV_Units[7] = new wxStaticText(panel_LoadSV, wxID_ANY, "nd", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    staticLoadSV_Descriptions[8] = new wxStaticText(panel_LoadSV, wxID_ANY, "Area", wxPoint(minX, Y + difftext));
+    textLoadSV_Array[8] = new wxTextCtrl(panel_LoadSV, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    staticLoadSV_Units[8] = new wxStaticText(panel_LoadSV, wxID_ANY, "sq ft", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    staticLoadSV_Descriptions[9] = new wxStaticText(panel_LoadSV, wxID_ANY, "Weight", wxPoint(minX, Y + difftext));
+    textLoadSV_Array[9] = new wxTextCtrl(panel_LoadSV, wxID_ANY, "0.0", wxPoint(minX + diffX, Y));
+    staticLoadSV_Units[9] = new wxStaticText(panel_LoadSV, wxID_ANY, "lbs", wxPoint(minX + diffunit, Y + difftext));
+    Y += diffY;
+
+    Y += diffY;
+    new wxButton(panel_LoadSV, ID_LoadSV_Convert, wxT("Convert"),
+        wxPoint(minX + diffX, Y), wxDefaultSize);
+
+    minX += 256;
+    Y = minY;
+
+    new wxStaticText(panel_LoadSV, wxID_ANY, "Output:", wxPoint(minX, Y + difftext));
+    Y += diffY;
+
+    textLoadSV_Output = new wxTextCtrl(panel_LoadSV, wxID_ANY, "",
+        wxPoint(minX, Y), wxSize(450, 160),
+        wxTE_READONLY | wxTE_MULTILINE);
+
+    Y += diffY * 6;
+    new wxButton(panel_LoadSV, ID_LoadSV_Save, wxT("Save"),
+        wxPoint(minX + diffX, Y), wxDefaultSize);
 }
 
 std::string StringFromTextBox(wxTextCtrl* box)
@@ -3045,6 +3218,232 @@ void FDSFrame::OnButtonShuttleLWPSaveStateVector(wxCommandEvent& event)
 
         core->SaveShuttleLWPStateVector(str.ToStdString());
     }
+}
+
+void FDSFrame::ChangeLoadSVPageLabels(wxCommandEvent& event)
+{
+    // Labels and tool tips
+    if (comboLoadSV_ELSET->GetSelection() == 0)
+    {
+        // Cartesian
+
+        staticLoadSV_Descriptions[1]->SetLabel("X");
+        staticLoadSV_Descriptions[2]->SetLabel("Y");
+        staticLoadSV_Descriptions[3]->SetLabel("Z");
+        staticLoadSV_Descriptions[4]->SetLabel("XD");
+        staticLoadSV_Descriptions[5]->SetLabel("YD");
+        staticLoadSV_Descriptions[6]->SetLabel("ZD");
+    }
+    else if(comboLoadSV_ELSET->GetSelection() == 1)
+    {
+        // Orbital elements
+        staticLoadSV_Descriptions[1]->SetLabel("A");
+        textLoadSV_Array[1]->SetToolTip("Semimajor axis");
+        staticLoadSV_Descriptions[2]->SetLabel("E");
+        textLoadSV_Array[2]->SetToolTip("Eccentricity");
+        staticLoadSV_Descriptions[3]->SetLabel("I");
+        textLoadSV_Array[3]->SetToolTip("Inclination");
+        staticLoadSV_Descriptions[4]->SetLabel("G");
+        textLoadSV_Array[4]->SetToolTip("Argument of perigee");
+        staticLoadSV_Descriptions[5]->SetLabel("H");
+        textLoadSV_Array[5]->SetToolTip("Longitude of the ascending node");
+        staticLoadSV_Descriptions[6]->SetLabel("L");
+        textLoadSV_Array[6]->SetToolTip("Mean anomaly");
+    }
+    else if (comboLoadSV_ELSET->GetSelection() == 1)
+    {
+        // Spherical
+        staticLoadSV_Descriptions[1]->SetLabel("RAD");
+        textLoadSV_Array[1]->SetToolTip("Radius of the orbit");
+        staticLoadSV_Descriptions[2]->SetLabel("VEL");
+        textLoadSV_Array[2]->SetToolTip("Vehicle total velocity");
+        staticLoadSV_Descriptions[3]->SetLabel("GAM");
+        textLoadSV_Array[3]->SetToolTip("Flight path angle");
+        staticLoadSV_Descriptions[4]->SetLabel("LAT");
+        textLoadSV_Array[4]->SetToolTip("Latitude");
+        staticLoadSV_Descriptions[5]->SetLabel("LNG");
+        textLoadSV_Array[5]->SetToolTip("Longitude");
+        staticLoadSV_Descriptions[6]->SetLabel("INC");
+        textLoadSV_Array[6]->SetToolTip("Inclination (negative for descending)");
+    }
+    else
+    {
+        // Apsides
+        staticLoadSV_Descriptions[1]->SetLabel("HA");
+        textLoadSV_Array[1]->SetToolTip("Apogee altitude");
+        staticLoadSV_Descriptions[2]->SetLabel("HP");
+        textLoadSV_Array[2]->SetToolTip("Perigee altitude");
+        staticLoadSV_Descriptions[3]->SetLabel("TA");
+        textLoadSV_Array[3]->SetToolTip("True anomaly");
+        staticLoadSV_Descriptions[4]->SetLabel("LAT");
+        textLoadSV_Array[4]->SetToolTip("Latitude");
+        staticLoadSV_Descriptions[5]->SetLabel("LNG");
+        textLoadSV_Array[5]->SetToolTip("Longitude");
+        staticLoadSV_Descriptions[6]->SetLabel("INC");
+        textLoadSV_Array[6]->SetToolTip("Inclination (negative for descending)");
+    }
+
+    // Units
+    std::string ANG_UNITS, DIST_UNITS, VEL_UNITS, MASS_UNITS, LENGTH_UNITS;
+
+    if (comboLoadSV_ANGUN->GetSelection() == 0) ANG_UNITS = "deg";
+    else ANG_UNITS = "rad";
+
+    if (comboLoadSV_DSTUN->GetSelection() == 0) DIST_UNITS = "feet";
+    else if (comboLoadSV_DSTUN->GetSelection() == 1) DIST_UNITS = "meters";
+    else if (comboLoadSV_DSTUN->GetSelection() == 2) DIST_UNITS = "NM";
+    else if (comboLoadSV_DSTUN->GetSelection() == 3) DIST_UNITS = "ER";
+    else DIST_UNITS = "km";
+
+    if (comboLoadSV_VELUN->GetSelection() == 0) VEL_UNITS = "ft/sec";
+    else if (comboLoadSV_VELUN->GetSelection() == 1) VEL_UNITS = "meters/sec";
+    else if (comboLoadSV_VELUN->GetSelection() == 2) VEL_UNITS = "NM/hour";
+    else if (comboLoadSV_VELUN->GetSelection() == 3) VEL_UNITS = "ER/hour";
+    else VEL_UNITS = "km/hour";
+
+    if (comboLoadSV_MASUN->GetSelection() == 0) MASS_UNITS = "lbs";
+    else if (comboLoadSV_MASUN->GetSelection() == 1) MASS_UNITS = "kg";
+    else MASS_UNITS = "slugs";
+
+    if (comboLoadSV_LENUN->GetSelection() == 0) LENGTH_UNITS = "sq ft";
+    else if (comboLoadSV_LENUN->GetSelection() == 1) LENGTH_UNITS = "sq meters";
+    else LENGTH_UNITS = "sq in";
+
+    if (comboLoadSV_ELSET->GetSelection() == 0)
+    {
+        // Cartesian
+        staticLoadSV_Units[1]->SetLabel(DIST_UNITS);
+        staticLoadSV_Units[2]->SetLabel(DIST_UNITS);
+        staticLoadSV_Units[3]->SetLabel(DIST_UNITS);
+        staticLoadSV_Units[4]->SetLabel(VEL_UNITS);
+        staticLoadSV_Units[5]->SetLabel(VEL_UNITS);
+        staticLoadSV_Units[6]->SetLabel(VEL_UNITS);
+    }
+    else if (comboLoadSV_ELSET->GetSelection() == 1)
+    {
+        // Elements
+        staticLoadSV_Units[1]->SetLabel(DIST_UNITS);
+        staticLoadSV_Units[2]->SetLabel("nd");
+        staticLoadSV_Units[3]->SetLabel(ANG_UNITS);
+        staticLoadSV_Units[4]->SetLabel(ANG_UNITS);
+        staticLoadSV_Units[5]->SetLabel(ANG_UNITS);
+        staticLoadSV_Units[6]->SetLabel(ANG_UNITS);
+    }
+    else if (comboLoadSV_ELSET->GetSelection() == 2)
+    {
+        // Spherical
+        staticLoadSV_Units[1]->SetLabel(DIST_UNITS);
+        staticLoadSV_Units[2]->SetLabel(VEL_UNITS);
+        staticLoadSV_Units[3]->SetLabel(ANG_UNITS);
+        staticLoadSV_Units[4]->SetLabel(ANG_UNITS);
+        staticLoadSV_Units[5]->SetLabel(ANG_UNITS);
+        staticLoadSV_Units[6]->SetLabel(ANG_UNITS);
+    }
+    else
+    {
+        // Apsides
+        staticLoadSV_Units[1]->SetLabel(DIST_UNITS);
+        staticLoadSV_Units[2]->SetLabel(DIST_UNITS);
+        staticLoadSV_Units[3]->SetLabel(ANG_UNITS);
+        staticLoadSV_Units[4]->SetLabel(ANG_UNITS);
+        staticLoadSV_Units[5]->SetLabel(ANG_UNITS);
+        staticLoadSV_Units[6]->SetLabel(ANG_UNITS);
+    }
+
+    staticLoadSV_Units[8]->SetLabel(LENGTH_UNITS);
+    staticLoadSV_Units[9]->SetLabel(MASS_UNITS);
+}
+
+void FDSFrame::OnButtonLoadSVConvert(wxCommandEvent& event)
+{
+    double dInputs[15];
+    int iInputs[15];
+
+    iInputs[0] = comboLoadSV_REFAX->GetSelection();
+    iInputs[1] = comboLoadSV_ELSET->GetSelection();
+    iInputs[2] = comboLoadSV_ANGUN->GetSelection();
+    iInputs[3] = comboLoadSV_DSTUN->GetSelection();
+    iInputs[4] = comboLoadSV_VELUN->GetSelection();
+    iInputs[5] = comboLoadSV_MASUN->GetSelection();
+    iInputs[6] = comboLoadSV_LENUN->GetSelection();
+
+    if (GetHHMMSS(textLoadSV_Array[0], staticLoadSV_Descriptions[0]->GetLabel(), &dInputs[0])) return;
+    for (int i = 1; i < 10; i++)
+    {
+        if (GetDouble(textLoadSV_Array[i], staticLoadSV_Descriptions[i]->GetLabel(), &dInputs[i])) return;
+    }
+
+    std::vector<std::string> data;
+
+    int err = core->StateVectorConverter(iInputs, dInputs, data);
+
+    if (err)
+    {
+        SetStatusText("Conversion error!");
+        return;
+    }
+
+    textLoadSV_Output->Clear();
+
+    for (unsigned i = 0; i < data.size(); i++)
+    {
+        if (i != 0) textLoadSV_Output->AppendText("\n");
+        textLoadSV_Output->AppendText(data[i]);
+    }
+
+    SetStatusText("Conversion successful!");
+}
+
+void FDSFrame::OnButton_LoadSV_Save(wxCommandEvent& event)
+{
+    if (textLoadSV_Output->GetNumberOfLines() != 7)
+    {
+        SetStatusText("State vector data not valid!");
+        return;
+    }
+
+    wxTextEntryDialog dialog(this, "Enter name for the file:", "LTP post MPS dump state vector file", "Test.txt", wxOK | wxCANCEL);
+
+    if (dialog.ShowModal() != wxID_OK) return;
+
+    wxString str = dialog.GetValue();
+    wxString project = textProjectFile->GetLineText(0);
+    wxString path = "Projects/" + project + "/State Vectors/";
+    wxString filepath = path + str;
+
+    //Save file
+    wxTextFile file(filepath);
+
+    if (file.Exists())
+    {
+        wxMessageDialog dialog(NULL, wxT("The file already exists. Overwrite?"),
+            wxT("Save file"),
+            wxNO_DEFAULT | wxYES_NO);
+
+        switch (dialog.ShowModal())
+        {
+        case wxID_YES:
+            break;
+        default:
+            return;
+        }
+    }
+    else
+    {
+        file.Create();
+    }
+
+    file.Clear();
+
+    for (int i = 0; i < textLoadSV_Output->GetNumberOfLines(); i++)
+    {
+        file.AddLine(textLoadSV_Output->GetLineText(i));
+    }
+
+    file.Write();
+    file.Close();
+
+    SetStatusText("State vector save successful!");
 }
 
 void FDSFrame::Add(wxTextCtrl* text, const wxString& config)

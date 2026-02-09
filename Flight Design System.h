@@ -65,6 +65,9 @@ public:
     void OnButton_ShuttleLWP_LTP_Execute(wxCommandEvent& event);
     void OnButton_ShuttleLWP_Export(wxCommandEvent& event);
     void OnButtonShuttleLWPSaveStateVector(wxCommandEvent& event);
+    void ChangeLoadSVPageLabels(wxCommandEvent& event);
+    void OnButtonLoadSVConvert(wxCommandEvent& event);
+    void OnButton_LoadSV_Save(wxCommandEvent& event);
 private:
 
     struct wxTextCtrlData
@@ -91,6 +94,7 @@ private:
     void AddOMPPage();
     void AddSkylabLWPPage();
     void AddStateVectorPage();
+    void AddLoadSVPage();
 
     void ReloadStateVectorPage();
     int ParseStateVectorFile(wxTextFile* file);
@@ -117,6 +121,7 @@ private:
     wxPanel* panel3;
     wxPanel* panel4;
     wxPanel* panel5;
+    wxPanel* panel_LoadSV;
     wxNotebook* nb_ShuttleLWP;
 
     //Config page
@@ -273,6 +278,19 @@ private:
     wxTextCtrl* textStateVectorArea;
     wxTextCtrl* textStateVectorKFactor;
     wxTextCtrl* textStateVectorOrbitData;
+
+    // Load SV page
+    wxChoice* comboLoadSV_REFAX;
+    wxChoice* comboLoadSV_ELSET;
+    wxChoice* comboLoadSV_ANGUN;
+    wxChoice* comboLoadSV_DSTUN;
+    wxChoice* comboLoadSV_VELUN;
+    wxChoice* comboLoadSV_MASUN;
+    wxChoice* comboLoadSV_LENUN;
+    wxStaticText* staticLoadSV_Descriptions[15];
+    wxTextCtrl* textLoadSV_Array[15];
+    wxStaticText* staticLoadSV_Units[15];
+    wxTextCtrl* textLoadSV_Output;
 
     Core* core;
 

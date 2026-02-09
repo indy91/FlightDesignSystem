@@ -1220,6 +1220,34 @@ namespace OrbMech
 		return atan2(u.z, sqrt(u.x * u.x + u.y * u.y));
 	}
 
+	void PICSSC(bool vecinp, VECTOR3& R, VECTOR3& V, double& r, double& v, double& lat, double& lng, double& gamma, double& azi)
+	{
+		// gamma definition: -90 degrees < gamma < 90 degrees
+		if (vecinp)
+		{
+			r = length(R);
+			lat = asin(R.z / r);
+			lng = atan2(R.y, R.x);
+			if (lng < 0)
+			{
+				lng += PI2;
+			}
+			VECTOR3 TEMP = mul(_M(cos(lng) * cos(lat), sin(lng) * cos(lat), sin(lat), -sin(lng), cos(lng), 0, -sin(lat) * cos(lng), -sin(lat) * sin(lng), cos(lat)), V);
+			v = length(TEMP);
+			gamma = asin(TEMP.x / v);
+			azi = atan2(TEMP.y, TEMP.z);
+			if (azi < 0)
+			{
+				azi += PI2;
+			}
+		}
+		else
+		{
+			R = _V(cos(lat) * cos(lng), cos(lat) * sin(lng), sin(lat)) * r;
+			V = mul(_M(cos(lat) * cos(lng), -sin(lng), -sin(lat) * cos(lng), cos(lat) * sin(lng), cos(lng), -sin(lat) * sin(lng), sin(lat), 0, cos(lat)), _V(sin(gamma), cos(gamma) * sin(azi), cos(gamma) * cos(azi)) * v);
+		}
+	}
+
 	bool TLAT(VECTOR3 R, VECTOR3 V, double lat, int C, double& K_AD, double& dtheta)
 	{
 		VECTOR3 H, N;
