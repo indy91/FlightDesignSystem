@@ -2374,6 +2374,10 @@ bool OrbitalManeuverProcessor::HeightManeuverAuto(OrbMech::StateVector sv_A, dou
 
 	//Initial guess
 	v_H = sqrt(2.0 * constants.mu / (length(sv_A.R) * (1.0 + length(sv_A.R) / r_D)));
+	if (horizontal)
+	{
+		v_H -= length(sv_A.V);
+	}
 
 	do
 	{
