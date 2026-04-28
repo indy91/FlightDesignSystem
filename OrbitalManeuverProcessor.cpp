@@ -226,6 +226,7 @@ OrbitalManeuverProcessor::OrbitalManeuverProcessor(OrbMech::GlobalConstants& cns
 	CurMan = 0;
 	recycle = false;
 	DEBUG = false;
+	GMTTEMP = 0.0;
 }
 
 void OrbitalManeuverProcessor::Init(const OMPInputs& in)
@@ -1677,7 +1678,7 @@ OrbMech::StateVector OrbitalManeuverProcessor::ApplyLVLHManeuver(OrbMech::StateV
 	return sv1;
 }
 
-int OrbitalManeuverProcessor::coast_auto(OrbMech::StateVector sv, double dt, OrbMech::StateVector& sv_out) const
+int OrbitalManeuverProcessor::coast_auto(OrbMech::StateVector sv, double dt, OrbMech::StateVector& sv_out)
 {
 	// OUTPUTS:
 	// return value: 0 = no error, 1001 = trajectory became reentrant, 1002 = Kepler error
@@ -1699,24 +1700,24 @@ int OrbitalManeuverProcessor::coast_auto(OrbMech::StateVector sv, double dt, Orb
 
 	integ.Propagate(inp, outp);
 
+	sv_out.R = outp.R;
+	sv_out.V = outp.V;
+	sv_out.GMT = GMTTEMP = outp.GMT;
+
 	if (outp.Error)
 	{
 		return outp.Error + 1000;
 	}
 
-	sv_out.R = outp.R;
-	sv_out.V = outp.V;
-	sv_out.GMT = outp.GMT;
-
 	return 0;
 }
 
-int OrbitalManeuverProcessor::DeltaOrbitsAuto(OrbMech::StateVector sv0, double M, OrbMech::StateVector& sv1) const
+int OrbitalManeuverProcessor::DeltaOrbitsAuto(OrbMech::StateVector sv0, double M, OrbMech::StateVector& sv1)
 {
 	return GeneralTrajectoryPropagation(sv0, 3, 0.0, M, sv1);
 }
 
-int OrbitalManeuverProcessor::GeneralTrajectoryPropagation(OrbMech::StateVector sv0, int opt, double param, double DN, OrbMech::StateVector& sv1) const
+int OrbitalManeuverProcessor::GeneralTrajectoryPropagation(OrbMech::StateVector sv0, int opt, double param, double DN, OrbMech::StateVector& sv1)
 {
 	//opt: 0 = time, 1 = mean anomaly, 2 = argument of latitude, 3 = maneuver line
 	//Error codes: 1001 = trajectory became reentrant, 1002 = Kepler error
@@ -1852,7 +1853,7 @@ int OrbitalManeuverProcessor::GeneralTrajectoryPropagation(OrbMech::StateVector 
 	return 1;
 }
 
-int OrbitalManeuverProcessor::timetoapo_auto(OrbMech::StateVector sv_A, double revs, OrbMech::StateVector& sv_out) const
+int OrbitalManeuverProcessor::timetoapo_auto(OrbMech::StateVector sv_A, double revs, OrbMech::StateVector& sv_out)
 {
 	double v_r = dotp(sv_A.R, sv_A.V) / length(sv_A.R);
 	if (v_r > 0)
@@ -1865,12 +1866,12 @@ int OrbitalManeuverProcessor::timetoapo_auto(OrbMech::StateVector sv_A, double r
 	}
 }
 
-int OrbitalManeuverProcessor::timetoperi_auto(OrbMech::StateVector sv_A, double revs, OrbMech::StateVector& sv_out) const
+int OrbitalManeuverProcessor::timetoperi_auto(OrbMech::StateVector sv_A, double revs, OrbMech::StateVector& sv_out)
 {
 	return GeneralTrajectoryPropagation(sv_A, 1, 0.0, revs, sv_out);
 }
 
-int OrbitalManeuverProcessor::FindCommonNode(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, VECTOR3& u_d, double& dt) const
+int OrbitalManeuverProcessor::FindCommonNode(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, VECTOR3& u_d, double& dt)
 {
 	OrbMech::StateVector sv_A1, sv_P1;
 	VECTOR3 H_A, H_P, C_N;
@@ -1938,7 +1939,7 @@ int OrbitalManeuverProcessor::FindCommonNode(OrbMech::StateVector sv_A, OrbMech:
 	return 0;
 }
 
-int OrbitalManeuverProcessor::FindNthApsidalCrossingAuto(OrbMech::StateVector sv0, double N, OrbMech::StateVector& sv_out) const
+int OrbitalManeuverProcessor::FindNthApsidalCrossingAuto(OrbMech::StateVector sv0, double N, OrbMech::StateVector& sv_out)
 {
 	int M = (int)N;
 	bool even = (M % 2) == 0;
@@ -1976,7 +1977,7 @@ int OrbitalManeuverProcessor::FindNthApsidalCrossingAuto(OrbMech::StateVector sv
 	}
 }
 
-int OrbitalManeuverProcessor::FindOptimumNodeShiftPoint(OrbMech::StateVector sv0, double dh, OrbMech::StateVector& sv_out) const
+int OrbitalManeuverProcessor::FindOptimumNodeShiftPoint(OrbMech::StateVector sv0, double dh, OrbMech::StateVector& sv_out)
 {
 	OrbMech::StateVector sv1;
 	VECTOR3 H;
@@ -2013,7 +2014,7 @@ int OrbitalManeuverProcessor::FindOptimumNodeShiftPoint(OrbMech::StateVector sv0
 	return GeneralTrajectoryPropagation(sv0, 2, U_D, DN, sv1);
 }
 
-int OrbitalManeuverProcessor::SEARMT(OrbMech::StateVector sv0, int opt, double val, OrbMech::StateVector& sv1) const
+int OrbitalManeuverProcessor::SEARMT(OrbMech::StateVector sv0, int opt, double val, OrbMech::StateVector& sv1)
 {
 	double K_AD, dtheta, dt, l_dot;
 	int C, Error;
@@ -2071,7 +2072,7 @@ int OrbitalManeuverProcessor::SEARMT(OrbMech::StateVector sv0, int opt, double v
 	return false;
 }
 
-int OrbitalManeuverProcessor::PositionMatch(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, OrbMech::StateVector& sv_P2) const
+int OrbitalManeuverProcessor::PositionMatch(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, OrbMech::StateVector& sv_P2)
 {
 	//Take target (sv_P) to same time as sv_A and then to position match
 
@@ -2099,7 +2100,7 @@ int OrbitalManeuverProcessor::PositionMatch(OrbMech::StateVector sv_A, OrbMech::
 	return 0;
 }
 
-int OrbitalManeuverProcessor::QRDTPI(OrbMech::StateVector sv_P, double dh, double E_L, OrbMech::StateVector &sv_P2) const
+int OrbitalManeuverProcessor::QRDTPI(OrbMech::StateVector sv_P, double dh, double E_L, OrbMech::StateVector &sv_P2)
 {
 	double c, e_T, p, dt, e_To, dto, r_j, r;
 	int s_F;
@@ -2180,7 +2181,7 @@ void OrbitalManeuverProcessor::ApsidesMagnitudeDetermination(OrbMech::StateVecto
 	OrbMech::OPS3_ORB_ALT_TSK(sv0.R, sv0.V, constants, HA, HP);
 }
 
-int OrbitalManeuverProcessor::Sunrise(OrbMech::StateVector sv0, bool rise, bool midnight, OrbMech::StateVector &sv1) const
+int OrbitalManeuverProcessor::Sunrise(OrbMech::StateVector sv0, bool rise, bool midnight, OrbMech::StateVector &sv1)
 {
 	//Find next environment change
 	
@@ -2678,7 +2679,19 @@ void OrbitalManeuverProcessor::GetOMPError(int err, std::string &buf, unsigned i
 	case 34:	buf = "Error: Chaser and target states identical";				break;
 	case 100:	buf = "Error: No target vessel.";								break;
 	case 101:	buf = "Error: Time theta error.";								break;
-	case 1001:	buf = "Error: Trajectory became reentrant.";					break;
+	case 1001:
+	{
+		
+
+		buf = "Error: Trajectory became reentrant after maneuver ";
+		sprintf_s(Buffer, "%d", CurMan);
+		buf.append(Buffer);
+		buf.append(" at ");
+		OrbMech::MET2String(Buffer, GETfromGMT(GMTTEMP));
+		buf.append(Buffer);
+		buf.append(" MET");
+	}
+	break;
 	case 1002:	buf = "Error: Kepler error in integrator.";						break;
 	case 1003:	buf = "Error: Trajectory became hyperbolic.";					break;
 	case 2001:	buf = "Error parsing MCT, maneuver name of maneuver " + std::to_string(i + 1) + " too long";	break;

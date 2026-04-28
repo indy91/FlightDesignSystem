@@ -56,6 +56,7 @@ void EnckeIntegrator::Init(const EnckeIntegratorInput& in)
 
 	CSA = -0.5 * in.Area * 2.0 * in.KFactor / in.Weight; //Hardcoded CD of 2.0
 	U_Z = _V(0, 0, 1);
+	Err = 0;
 
 	if (in.dt >= 0.0)
 	{
@@ -86,22 +87,20 @@ void EnckeIntegrator::Propagate(const EnckeIntegratorInput& in, EnckeIntegratorO
 		GaussJackson();
 		if (Err)
 		{
-			out.Error = Err;
-			return;
+			break;
 		}
 		//Edit
 		IntegrationTerminationControlRoutine();
 		if (Err)
 		{
-			out.Error = Err;
-			return;
+			break;
 		}
 	}
 
 	out.R = RSTATE;
 	out.V = VSTATE;
 	out.GMT = HRS;
-	out.Error = 0;
+	out.Error = Err;
 }
 
 void EnckeIntegrator::IntegrationTerminationControlRoutine()

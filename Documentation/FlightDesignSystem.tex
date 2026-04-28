@@ -77,6 +77,7 @@ For a new project, the first step should always be to enter the data on the conf
 The last parameter on this tab is the difference between these two time measuring systems, UTC and TDB. This should be entered for all "worlds", but it is especially important for the Orbiter compatible modes (NASSP or SSV) as TLEs are in UTC and they need to be converted to the Orbiter time measuring system. Also with the "real" world selection this number is used for certain precession/nutation/rotation calculations. The value can be manually entered, but for convenience a button has been added to automatically generate the number based on the entered date. The time is is fixed offset (32.184 seconds) plus the number of leap seconds since 1972.\\
 \newpage
 \section{Generic LWP}
+This Launch Window Processor (LWP) is derived from the actual Flight Design System version, a description of which can be found in the Processor Library - Book 2 document linked under references.\\
 \newpage
 \section{Shuttle LWP}
 The Shuttle LWP is derived very closely from the Rendezvous Launch Window processor that the actual Flight Dynamics Officers for Space Shuttle missions used. It is described in detail in the FDO Console Handbook, see references.\\
@@ -127,5 +128,6 @@ Altitude in NM & Radius in feet\\
 \section{References}
 \begin{itemize}
 \item \href{https://www.ibiblio.org/apollo/Shuttle/MCC/FDO%20Console%20Handbook%20-%20On-orbit.pdf}{FDO Console Handbook, Voume 3: On-Orbit Trajectory Operations}
+\item \href{https://web.archive.org/web/20100520004146/http://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19800070628_1980070628.pdf}{Flight Design System-1 - System Design Document - Processor Library - Book 2}
 \end{itemize}
 \end{document}

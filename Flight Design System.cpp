@@ -2909,7 +2909,11 @@ void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)
         return;
     }
 
-    if (OMP::OrbitalManeuverProcessor::ParseManeuverConstraintsTable(ManeuverConstraintsInput, tab_out, errormessage))
+    OrbMech::GlobalConstants globtemp;
+    OrbMech::SessionConstants sesstemp;
+    OMP::OrbitalManeuverProcessor omp(globtemp, sesstemp);
+
+    if (omp.ParseManeuverConstraintsTable(ManeuverConstraintsInput, tab_out, errormessage))
     {
         wxString Output;
         Output << errormessage;

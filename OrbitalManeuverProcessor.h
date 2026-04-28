@@ -191,7 +191,7 @@ namespace OMP
 		OrbitalManeuverProcessor(OrbMech::GlobalConstants& cnst, OrbMech::SessionConstants& scnst);
 
 		//Parse input to internal format
-		static bool ParseManeuverConstraintsTable(const std::vector< ManeuverConstraintsInput>& tab_in, std::vector < ManeuverConstraints>& tab_out, std::string &errormessage);
+		bool ParseManeuverConstraintsTable(const std::vector< ManeuverConstraintsInput>& tab_in, std::vector < ManeuverConstraints>& tab_out, std::string &errormessage);
 		
 		//Run OMP
 		void Calculate(const OMPInputs& in, OMPOutputs &out);
@@ -208,23 +208,23 @@ namespace OMP
 		bool IsOMPConverged() const;
 		void CalculateManeuverEvalTable(OrbMech::StateVector sv_A0, OrbMech::StateVector sv_P0);
 		void PrintManeuverEvaluationTable();
-		static void GetOMPError(int err, std::string& buf, unsigned int i = 0, unsigned int j = 0);
+		void GetOMPError(int err, std::string& buf, unsigned int i = 0, unsigned int j = 0);
 
 		//Trajectory propagation
-		int coast_auto(OrbMech::StateVector sv0, double dt, OrbMech::StateVector& sv1) const;
-		int DeltaOrbitsAuto(OrbMech::StateVector sv0, double M, OrbMech::StateVector& sv1) const;
-		int GeneralTrajectoryPropagation(OrbMech::StateVector sv0, int opt, double param, double DN, OrbMech::StateVector& sv1) const;
-		int timetoapo_auto(OrbMech::StateVector sv_A, double revs, OrbMech::StateVector& sv_out) const;
-		int timetoperi_auto(OrbMech::StateVector sv_A, double revs, OrbMech::StateVector& sv_out) const;
-		int FindCommonNode(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, VECTOR3& u_d, double& dt) const;
-		int FindNthApsidalCrossingAuto(OrbMech::StateVector sv0, double N, OrbMech::StateVector& sv_out) const;
-		int FindOptimumNodeShiftPoint(OrbMech::StateVector sv0, double dh, OrbMech::StateVector& sv_out) const;
-		int SEARMT(OrbMech::StateVector sv0, int opt, double val, OrbMech::StateVector& sv1) const;
-		int PositionMatch(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, OrbMech::StateVector& sv_P2) const;
-		int QRDTPI(OrbMech::StateVector sv_P, double dh, double E_L, OrbMech::StateVector& sv_P2) const;
+		int coast_auto(OrbMech::StateVector sv0, double dt, OrbMech::StateVector& sv1);
+		int DeltaOrbitsAuto(OrbMech::StateVector sv0, double M, OrbMech::StateVector& sv1);
+		int GeneralTrajectoryPropagation(OrbMech::StateVector sv0, int opt, double param, double DN, OrbMech::StateVector& sv1);
+		int timetoapo_auto(OrbMech::StateVector sv_A, double revs, OrbMech::StateVector& sv_out);
+		int timetoperi_auto(OrbMech::StateVector sv_A, double revs, OrbMech::StateVector& sv_out);
+		int FindCommonNode(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, VECTOR3& u_d, double& dt);
+		int FindNthApsidalCrossingAuto(OrbMech::StateVector sv0, double N, OrbMech::StateVector& sv_out);
+		int FindOptimumNodeShiftPoint(OrbMech::StateVector sv0, double dh, OrbMech::StateVector& sv_out);
+		int SEARMT(OrbMech::StateVector sv0, int opt, double val, OrbMech::StateVector& sv1);
+		int PositionMatch(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, OrbMech::StateVector& sv_P2);
+		int QRDTPI(OrbMech::StateVector sv_P, double dh, double E_L, OrbMech::StateVector& sv_P2);
 
 		//TIG modifiers
-		int Sunrise(OrbMech::StateVector sv0, bool rise, bool midnight, OrbMech::StateVector& sv1) const;
+		int Sunrise(OrbMech::StateVector sv0, bool rise, bool midnight, OrbMech::StateVector& sv1);
 		int FindOrbitalSunriseRelativeTime(OrbMech::StateVector sv0, bool sunrise, double dt1, OrbMech::StateVector& sv_out);
 		int FindOrbitalMidnightRelativeTime(OrbMech::StateVector sv0, bool midnight, double dt1, OrbMech::StateVector& sv_out);
 
@@ -311,6 +311,8 @@ namespace OMP
 		std::vector<std::string> DebugOutput;
 		// Char buffer
 		char Buffer[256];
+		// GMT of last state vector propagation, for error code 1001
+		double GMTTEMP;
 
 		// OUTPUTS
 		MANEVALTABLE ManeuverEvaluationTable;
