@@ -235,7 +235,7 @@ namespace OMP
 		int SORManeuver(OrbMech::StateVector sv_A1, OrbMech::StateVector sv_P, VECTOR3 off, VECTOR3& DV);
 		VECTOR3 NPCManeuver(OrbMech::StateVector sv_A, VECTOR3 H_P) const;
 		double CalculateYDot(VECTOR3 V_A, VECTOR3 R_P, VECTOR3 V_P) const;
-		VECTOR3 NSRManeuver(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P) const;
+		int NSRManeuver(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, VECTOR3& DV_LVLH);
 		VECTOR3 NodeShiftManeuver(OrbMech::StateVector sv0, double dh_D) const;
 		VECTOR3 PlaneChangeManeuver(OrbMech::StateVector sv0, double dw_D) const;
 

@@ -74,7 +74,7 @@ The Flight Design System is a ground-up rendezvous mission planning tool, specif
 \newpage
 \section{Config}
 For a new project, the first step should always be to enter the data on the config tab and save. At this point a folder for the project is created under Projects. The year, month and day should be for the launch day. The world selection affects Earth rotation and coordinate system conversions. The "real" world uses parameters for the actual Earth, including nutation. All displayed times in the FDS are then in Coordinated Universal Time (UTC).  Selecting NASSP or SSV will make use of the Orbiter conversion functions between coordinate systems.  Orbiter uses Barycentric Dynamical Time (TDB) as its time system and all displayed times in the FDS will be in TDB with NASSP or SSV selected. NASSP does not use the standard Earth configuration file in Orbiter, so the World selection accounts for certain differences in Earth radius and rotations. \\
-The last parameter on this tab is the difference between these two time measuring systems, UTC and TDB. This should be entered for all "worlds", but it is especially important for the Orbiter compatible modes (NASSP or SSV) as TLEs are in UTC and they need to be converted to the Orbiter time measuring system. Also with the "real" world selection this number is used for certain precession/nutation/rotation calculations. The value can be manually entered, but for convenience a button has been added to automatically generate the number based on the entered date. The time is is fixed offset (32.184 seconds) plus the number of leap seconds since 1972.\\
+The last parameter on this tab is the difference between these two time measuring systems, UTC and TDB. This should be entered for all "worlds", but it is especially important for the Orbiter compatible modes (NASSP or SSV) as TLEs are in UTC and they need to be converted to the Orbiter time measuring system. Also with the "real" world selection this number is used for certain precession/nutation/rotation calculations. The value can be manually entered, but for convenience a button has been added to automatically generate the number based on the entered date. The time is a fixed offset (32.184 seconds) plus the number of leap seconds since 1972.\\
 \newpage
 \section{Generic LWP}
 This Launch Window Processor (LWP) is derived from the actual Flight Design System version, a description of which can be found in the Processor Library - Book 2 document linked under references.\\
@@ -83,13 +83,14 @@ This Launch Window Processor (LWP) is derived from the actual Flight Design Syst
 The Shuttle LWP is derived very closely from the Rendezvous Launch Window processor that the actual Flight Dynamics Officers for Space Shuttle missions used. It is described in detail in the FDO Console Handbook, see references.\\
 \newpage
 \section{Skylab LWP}
+The Skylab LWP is an implementation of the Skylab Launch Window Processor from: https://www.ibiblio.org/apollo/Documents/70-FM-198.pdf
 \newpage
 \section{OMP}
+This is an implementation of the Orbital Maneuver Processor, the main tool used in the Shuttle era to calculate rendezvous maneuvers. It is equivalent to the OMP in my FDO MFD. It can be used to plan a ground-up rendezvous mission and exporting the initial config file used by the FDO MFD.\\
 \newpage
 \section{State Vector}
-State vectors can be added in a few formats and coordinate systems. The typical state vector for a rendezvous target will be in the TLE format, while internally stored state vectors will be in the True Equator-Greenwich (TEG) coordinate system. Also supported are J2000 and M50. While TLE data already contain information about the drag of the vehicle, the FDS uses numerical integration for trajectory propagation, so each state vector additionally needs weight, vehicle area and a K-factor for drag calculations. The K-factor is a multiplier that as used with a hardcoded drag coefficient (CD) of 2.0. In other places in the FDS the CD is entered directly.\\
+State vectors can be added in a few formats and coordinate systems. The typical state vector for a rendezvous target will be in the TLE format, while internally stored state vectors will be in the True Equator-Greenwich (TEG) coordinate system. Also supported are J2000 (left-handed ecliptic, like Orbiter uses it) and M50. While TLE data already contain information about the drag of the vehicle, the FDS uses numerical integration for trajectory propagation, so each state vector additionally needs weight, vehicle area and a K-factor for drag calculations. The K-factor is a multiplier that as used with a hardcoded drag coefficient (CD) of 2.0. In other places in the FDS the CD is entered directly.\\
 The format of the SV text box is as follows:\\
-
 \begin{center}
 \begin{tabular}{|l|l|l|l|l| }
 \hline
@@ -103,7 +104,9 @@ Line 3& GMT in seconds&MJD in days&MJD in days&-\\
 \hline
 \end{tabular}
 \end{center}
-
+\newpage
+\section{Load SV}
+If the mission to be planned is not a ground-up rendezvous mission or if no state vector/TLE can be found for the target vehicle of a ground-up rendezvous mission then this page can be used to generate this state vector manually.\\
 \newpage
 \section{Walkthrough: Shuttle rendezvous mission}
 Enter project name, select SSV as world, enter Year, Month and Day of launch. Save the project. Find a TLE for the launch day, best just before liftoff time. Go to the State Vector tab, click New and enter the full TLE under SV. Change the Coordinates selection to TLE, enter weight, area and K-Factor (typically 1.0) and save. Click check to see how close to midnight of launch day the TLE time tag is.\\

@@ -54,6 +54,9 @@ enum
     ID_Button_MCT_View,
     ID_Button_MCT_Save,
     ID_Button_MCT_Load_Template,
+    ID_Button_MCT_Delete_Mnvr,
+    ID_Button_MCT_Insert_Mnvr,
+    wxID_MCT_EDITOR,
     ID_Button_FDOMFD_Export,
     wxID_comboShuttleLWP_Launchpad,
     ID_Button_Shuttle_LWP_Execute,
@@ -90,6 +93,8 @@ EVT_BUTTON(ID_Button_LWP_LVDC_Export, FDSFrame::OnButton_LWP_LVDC_Export)
 EVT_BUTTON(ID_Button_MCT_View, FDSFrame::OnButton_View_MCT)
 EVT_BUTTON(ID_Button_MCT_Save, FDSFrame::OnButton_Save_MCT)
 EVT_BUTTON(ID_Button_MCT_Load_Template, FDSFrame::OnButton_MCT_Load_Template)
+EVT_BUTTON(ID_Button_MCT_Delete_Mnvr, FDSFrame::OnButton_MCT_Delete_Maneuver)
+EVT_BUTTON(ID_Button_MCT_Insert_Mnvr, FDSFrame::OnButton_MCT_Insert_Maneuver)
 EVT_BUTTON(ID_Button_FDOMFD_Export, FDSFrame::OnButton_FDOMFD_Export)
 EVT_CHOICE(wxID_comboShuttleLWP_Launchpad, FDSFrame::OnCombo_ShuttleLWP_Launchpad)
 EVT_BUTTON(ID_Button_Shuttle_LWP_Execute, FDSFrame::OnButton_ShuttleLWP_LWP_Execute)
@@ -99,6 +104,7 @@ EVT_BUTTON(ID_Button_ShuttleLWP_SaveStateVector, FDSFrame::OnButtonShuttleLWPSav
 EVT_CHOICE(ID_LoadSVPageLabels, FDSFrame::ChangeLoadSVPageLabels)
 EVT_BUTTON(ID_LoadSV_Convert, FDSFrame::OnButtonLoadSVConvert)
 EVT_BUTTON(ID_LoadSV_Save, FDSFrame::OnButton_LoadSV_Save)
+EVT_GRID_CMD_CELL_CHANGED(wxID_MCT_EDITOR, FDSFrame::OnMCTEditorCellChange)
 END_EVENT_TABLE()
 
 bool MyApp::OnInit()
@@ -1160,7 +1166,7 @@ void FDSFrame::AddOMPPage()
     new wxStaticText(panel3, wxID_ANY, "Maneuver Constraints Table", wxPoint(550, 10));
     wxPanel *temp = new wxPanel(panel3, wxID_ANY, wxPoint(350, 40), wxSize(650, 300), wxBORDER_SIMPLE);
 
-    textOMP_MCT_Editor = new wxGrid(temp, wxID_ANY, wxDefaultPosition, wxSize(650, 300));
+    textOMP_MCT_Editor = new wxGrid(temp, wxID_MCT_EDITOR, wxDefaultPosition, wxSize(650, 300));
 
     textOMP_MCT_Editor->CreateGrid(40, 13);
 
@@ -1183,8 +1189,16 @@ void FDSFrame::AddOMPPage()
     textOMP_MCT_Editor->SetColLabelValue(11, "Secondary 8");
     textOMP_MCT_Editor->SetColLabelValue(12, "Secondary 9");
 
+    bMCTWasChanged = false;
+
     new wxButton(panel3, ID_Button_MCT_Load_Template, wxT("Load Template"),
         wxPoint(450, 350), wxDefaultSize);
+
+    new wxButton(panel3, ID_Button_MCT_Delete_Mnvr, wxT("Delete Mnvr"),
+        wxPoint(560, 350), wxDefaultSize);
+
+    new wxButton(panel3, ID_Button_MCT_Insert_Mnvr, wxT("Insert Mnvr"),
+        wxPoint(660, 350), wxDefaultSize);
 
     new wxButton(panel3, ID_Button_MCT_Save, wxT("Save"),
         wxPoint(450, 414), wxDefaultSize);
@@ -1869,6 +1883,22 @@ void FDSFrame::OnButtonLWPSaveStateVector(wxCommandEvent& event)
 
 void FDSFrame::OnButtonOMPGenerate(wxCommandEvent& event)
 {
+    // First check if the MCT was modified
+    if (bMCTWasChanged)
+    {
+        wxMessageDialog dialog(NULL, "Save MCT to file before running the OMP?",
+            wxT("Save file"),
+            wxYES_NO);
+
+        switch (dialog.ShowModal())
+        {
+        case wxID_YES:
+            wxCommandEvent eventdummy;
+            OnButton_Save_MCT(eventdummy);
+            break;
+        }
+    }
+
     //Calculate OMP
 
     std::string inputs[5];
@@ -1882,7 +1912,6 @@ void FDSFrame::OnButtonOMPGenerate(wxCommandEvent& event)
     std::vector<std::vector<std::string>> data;
 
     SetStatusText("Busy...");
-
 
     std::string errormessage;
 
@@ -2845,6 +2874,7 @@ void FDSFrame::OnButton_Save_MCT(wxCommandEvent& event)
     file.Close();
 
     SetStatusText("MCT file saved!");
+    bMCTWasChanged = false;
 }
 
 void FDSFrame::OnButton_MCT_Load_Template(wxCommandEvent& event)
@@ -2862,6 +2892,41 @@ void FDSFrame::OnButton_MCT_Load_Template(wxCommandEvent& event)
     wxString path = dialog.GetPath();
 
     ViewMCT(path);
+}
+
+void FDSFrame::OnButton_MCT_Delete_Maneuver(wxCommandEvent& event)
+{
+    wxArrayInt arr = textOMP_MCT_Editor->GetSelectedRows();
+
+    // Only do this with one selected row
+    if (arr.size() != 1U) return;
+
+    int row = arr[0];
+
+    // Delete selected row
+    textOMP_MCT_Editor->DeleteRows(row);
+    // Add a new row at the end to keep the number of maneuvers at 40
+    textOMP_MCT_Editor->AppendRows(1);
+}
+
+void FDSFrame::OnButton_MCT_Insert_Maneuver(wxCommandEvent& event)
+{
+    wxArrayInt arr = textOMP_MCT_Editor->GetSelectedRows();
+
+    // Only do this with one selected row
+    if (arr.size() != 1U) return;
+
+    int row = arr[0];
+
+    // Insert row at selected place
+    textOMP_MCT_Editor->InsertRows(row);
+    // Delete last row to keep the number of maneuvers at 40
+    textOMP_MCT_Editor->DeleteRows(40);
+}
+
+void FDSFrame::OnMCTEditorCellChange(wxGridEvent& event)
+{
+    bMCTWasChanged = true;
 }
 
 void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)

@@ -708,7 +708,6 @@ namespace ShuttleLWP
 
 	VECTOR3 ShuttleLaunchWindowProcessor::GetURLS(double GMTLO) const
 	{
-		VECTOR3 R_TEG;
 		double LONG;
 
 		LONG = inp.LONGLS + globconst.w_E * GMTLO;

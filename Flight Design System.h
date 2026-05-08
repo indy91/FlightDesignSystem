@@ -59,6 +59,9 @@ public:
     void OnButton_View_MCT(wxCommandEvent& event);
     void OnButton_Save_MCT(wxCommandEvent& event);
     void OnButton_MCT_Load_Template(wxCommandEvent& event);
+    void OnButton_MCT_Delete_Maneuver(wxCommandEvent& event);
+    void OnButton_MCT_Insert_Maneuver(wxCommandEvent& event);
+    void OnMCTEditorCellChange(wxGridEvent& event);
     void OnButton_FDOMFD_Export(wxCommandEvent& event);
     void OnCombo_ShuttleLWP_Launchpad(wxCommandEvent& event);
     void OnButton_ShuttleLWP_LWP_Execute(wxCommandEvent& event);
@@ -239,6 +242,7 @@ private:
     wxTextCtrl* textOMP_Target;
     wxTextCtrl* textOMP_MCT;
     wxGrid* textOMP_MCT_Editor;
+    bool bMCTWasChanged;
 
     //Skylab LWP page
     wxTextCtrl* textSkylabLWP_TargetVector;
