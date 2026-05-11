@@ -219,6 +219,8 @@ namespace OMP
 		int FindCommonNode(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, VECTOR3& u_d, double& dt);
 		int FindNthApsidalCrossingAuto(OrbMech::StateVector sv0, double N, OrbMech::StateVector& sv_out);
 		int FindOptimumNodeShiftPoint(OrbMech::StateVector sv0, double dh, OrbMech::StateVector& sv_out);
+		// Search for input elevation angle
+		int TELEV(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, double e_L, OrbMech::StateVector& sv_A2);
 		int SEARMT(OrbMech::StateVector sv0, int opt, double val, OrbMech::StateVector& sv1);
 		int PositionMatch(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, OrbMech::StateVector& sv_P2);
 		int QRDTPI(OrbMech::StateVector sv_P, double dh, double E_L, OrbMech::StateVector& sv_P2);

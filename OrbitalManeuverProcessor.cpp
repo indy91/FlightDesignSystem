@@ -822,11 +822,17 @@ int OrbitalManeuverProcessor::ProcessTIGModifiers()
 				ManeuverData[i].tigmodifiers.type = OMPDefs::SECONDARIES::DEC;
 				ManeuverData[i].tigmodifiers.value = ManeuverConstraintsTable[i].secondaries[j].value * RAD;
 			}
-			//Latitude
+			//Altitude
 			else if (ManeuverConstraintsTable[i].secondaries[j].type == OMPDefs::ALT)
 			{
 				ManeuverData[i].tigmodifiers.type = OMPDefs::SECONDARIES::ALT;
 				ManeuverData[i].tigmodifiers.value = ManeuverConstraintsTable[i].secondaries[j].value * 1852.0;
+			}
+			// Elevation angle
+			else if (ManeuverConstraintsTable[i].secondaries[j].type == OMPDefs::EL)
+			{
+				ManeuverData[i].tigmodifiers.type = OMPDefs::SECONDARIES::EL;
+				ManeuverData[i].tigmodifiers.value = ManeuverConstraintsTable[i].secondaries[j].value * RAD;
 			}
 			//Maneuver vehicle and thruster
 			else if (ManeuverConstraintsTable[i].secondaries[j].type == OMPDefs::SECONDARIES::VFIL)
@@ -847,7 +853,7 @@ int OrbitalManeuverProcessor::ProcessTIGModifiers()
 					ManeuverData[i].ChaserMan = false;
 				}
 				ManeuverData[i].ThrustProfile = Thr - 1;
-				}
+			}
 		}
 	}
 	return 0;
@@ -1042,6 +1048,10 @@ int OrbitalManeuverProcessor::UpdateToModfiedTIG()
 			}
 
 			Error = GeneralTrajectoryPropagation(ManeuverData[CurMan].sv_A_bef_table, 2, U_D, crossings, ManeuverData[CurMan].sv_A_bef_table);
+		}
+		else if (ManeuverData[CurMan].tigmodifiers.type == OMPDefs::SECONDARIES::EL)
+		{
+			Error = TELEV(ManeuverData[CurMan].sv_A_bef_table, ManeuverData[CurMan].sv_P_bef_table, ManeuverData[CurMan].tigmodifiers.value, ManeuverData[CurMan].sv_A_bef_table);
 		}
 	}
 
@@ -2015,6 +2025,103 @@ int OrbitalManeuverProcessor::FindOptimumNodeShiftPoint(OrbMech::StateVector sv0
 	return GeneralTrajectoryPropagation(sv0, 2, U_D, DN, sv1);
 }
 
+int OrbitalManeuverProcessor::TELEV(OrbMech::StateVector sv_A, OrbMech::StateVector sv_P, double e_L, OrbMech::StateVector& sv_A2)
+{
+	// Both state vectors at threshold time
+
+	OrbMech::StateVector sv_A1, sv_P1;
+	VECTOR3 i_LOS, i, i_H;
+	double r_A, r_P, e_LN, e, C, C2, p, t_i, t, e0, eps5, eps6, dt_max;
+	int C1, s_F, skip;
+
+	// Constants
+	eps5 = 0.0001;
+	eps6 = 50.0;
+	dt_max = 900.0;
+
+	C = 0.0;
+	C1 = s_F = 0;
+	sv_A1 = sv_A;
+	sv_P1 = sv_P;
+	t_i = sv_A.GMT;
+
+	do
+	{
+		// Calculate common variables
+		r_A = length(sv_A1.R);
+		r_P = length(sv_P1.R);
+		// Unit vector between the primary and target vehicles
+		i_LOS = unit(sv_P1.R - sv_A1.R);
+		// Projection of i_LOS into orbital plane
+		i = unit(i_LOS - sv_A1.R * dotp(i_LOS, sv_A1.R) / (r_A * r_A));
+		// Unit vector perpendicular to R_A in the orbital plane of the primary target
+		i_H = unit(crossp(crossp(sv_A1.R, sv_A1.V), sv_A1.R));
+		// Computed elevation angle
+		e_LN = acos(dotp(i_LOS, i * sign(dotp(i, i_H))));
+		if (dotp(i_LOS, sv_A1.R) < 0.0)
+		{
+			e_LN = PI2 - e_LN;
+		}
+
+		skip = 0;
+		if (C1 == 0)
+		{
+			// First pass
+			// Perform test to determine if input elevation angle and the differential altitude are consistent
+			if ((e_L - PI) * (r_A - r_P) < 0.0)
+			{
+				// Inconsistent. Drive dependent variable to zero if possible
+				e = r_P - r_A + sign(r_P - r_A) * eps6;
+				skip = 1;
+			}
+			else
+			{
+				// Consistent
+				// Set consistency flag to 1
+				C1 = 1;
+				if (C != 0.0)
+				{
+					C = 0.0;
+					C2 = sign(t_i - t);
+					t = t_i;
+					t_i = t_i + 10.0 * C2;
+					skip = 2;
+				}
+			}
+		}
+
+		if (skip == 0)
+		{
+			e = e_L - e_LN;
+			if (abs(e) <= eps5)
+			{
+				// Success
+				sv_A2 = sv_A1;
+				return 0;
+			}
+		}
+		if (skip <= 1)
+		{
+			OrbMech::ITER(C, s_F, e, p, t_i, e0, t, -10.0);
+			if (s_F)
+			{
+				// Too many iterations
+				return 35;
+			}
+			if (abs(t_i - t) > dt_max)
+			{
+				t_i = t + dt_max * sign(t_i - t);
+			}
+		}
+		// Update
+		Error = coast_auto(sv_A1, t_i - t, sv_A1);
+		if (Error) return Error;
+		Error = coast_auto(sv_P1, t_i - t, sv_P1);
+		if (Error) return Error;
+	}
+	while (true);
+}
+
 int OrbitalManeuverProcessor::SEARMT(OrbMech::StateVector sv0, int opt, double val, OrbMech::StateVector& sv1)
 {
 	double K_AD, dtheta, dt, l_dot;
@@ -2693,6 +2800,7 @@ void OrbitalManeuverProcessor::GetOMPError(int err, std::string &buf, unsigned i
 	case 32:	buf = "Error: Wrong vehicle code in VFIL secondary";			break;
 	case 33:	buf = "Error: Wrong thruster code in VFIL secondary";			break;
 	case 34:	buf = "Error: Chaser and target states identical";				break;
+	case 35:	buf = "Error: Too many iterations in elevation angle search";	break;
 	case 100:	buf = "Error: No target vessel.";								break;
 	case 101:	buf = "Error: Time theta error.";								break;
 	case 1001:
