@@ -63,12 +63,19 @@ namespace OMP
 
 	struct ManeuverConstraintsInput
 	{
-		std::string Name;			//Maneuver name
-		std::string Type;			//Maneuver type
-		std::string Threshold;		//Threshold type
-		std::string ThresholdValue; //Value associated with threshold
+		std::string Name;			// Maneuver name
+		std::string Type;			// Maneuver type
+		std::string Threshold;		// Threshold type
+		std::string ThresholdValue; // Value associated with threshold
 		std::string Secondary[9];
 		std::string SecondaryValues[9];
+	};
+
+	// MCT with strings
+	struct ManeuverConstraintsTableString
+	{
+		std::string Comment;
+		std::vector <ManeuverConstraintsInput> Entries;
 	};
 
 	struct ManeuverConstraints
@@ -80,12 +87,19 @@ namespace OMP
 		std::vector<SecData> secondaries;
 	};
 
+	// Parsed MCT
+	struct ManeuverConstraintsTableParsed
+	{
+		std::string Comment;
+		std::vector <ManeuverConstraints> Entries;
+	};
+
 	struct ITERCONSTR
 	{
 		int type = 0;			//type of iterator (1 = NC, 2 = NH, 3 = NPC)
 		unsigned man = 0;		//maneuver that is applying the DV
 		unsigned constr = 0;	//maneuver for which the constraint is applied
-		int constrtype = 0;		//For NC: 1 = DR, 2 = PHA
+		int constrtype = 0;		//For NC: 1 = DR, 2 = PHA, 3 = ELA
 		double value = 0.0;		//Value of the constraint
 	};
 
@@ -157,7 +171,7 @@ namespace OMP
 		OrbMech::StateVector CHASER;
 		OrbMech::StateVector TARGET;
 		//Table with maneuver constraints
-		std::vector<ManeuverConstraints> ManeuverConstraintsTable;
+		ManeuverConstraintsTableParsed ManeuverConstraintsTable;
 		//Data for the evaluation table
 		std::string ProjectFolder, OMPChaserFile, OMPTargetFile, OMPMCTFile;
 		//Write output print
@@ -190,8 +204,14 @@ namespace OMP
 	public:
 		OrbitalManeuverProcessor(OrbMech::GlobalConstants& cnst, OrbMech::SessionConstants& scnst);
 
+		// PARSING
+		// Convert vector of MCT file lines to string format
+		static int ConvertFileToMCTStrings(const std::vector<std::string> &file, ManeuverConstraintsTableString &tab);
+		// Convert MCT string format to file format
+		static int ConvertMCTStringsToFile(const ManeuverConstraintsTableString& tab, std::vector<std::string>& file);
+
 		//Parse input to internal format
-		bool ParseManeuverConstraintsTable(const std::vector< ManeuverConstraintsInput>& tab_in, std::vector < ManeuverConstraints>& tab_out, std::string &errormessage);
+		bool ParseManeuverConstraintsTable(const ManeuverConstraintsTableString& tab_in, ManeuverConstraintsTableParsed& tab_out, std::string &errormessage);
 		
 		//Run OMP
 		void Calculate(const OMPInputs& in, OMPOutputs &out);
@@ -253,7 +273,7 @@ namespace OMP
 		// INPUTS
 		OrbMech::StateVector sv_chaser;
 		OrbMech::StateVector sv_target;
-		std::vector<ManeuverConstraints> ManeuverConstraintsTable;
+		ManeuverConstraintsTableParsed ManeuverConstraintsTable;
 		std::string ProjectFolder, OMPChaserFile, OMPTargetFile, OMPMCTFile;
 
 		// INTERNAL

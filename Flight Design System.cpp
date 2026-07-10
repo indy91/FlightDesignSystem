@@ -20,7 +20,9 @@ program. If not, see <https://www.gnu.org/licenses/>.
 
 #include "Flight Design System.h"
 #include "Core.h"
+#include "OrbitalManeuverProcessor.h"
 #include <iostream>
+#include <vector>
 #include <wx/notebook.h>
 #include "FDSOutputDialog.h"
 #include <wx/fileconf.h>
@@ -61,6 +63,7 @@ enum
     wxID_comboShuttleLWP_Launchpad,
     ID_Button_Shuttle_LWP_Execute,
     ID_Button_Shuttle_LTP_Execute,
+    ID_Button_Shuttle_LWP_Load_Inputs,
     ID_World,
     ID_Button_ShuttleLWP_Export,
     ID_Button_ShuttleLWP_SaveStateVector,
@@ -101,6 +104,7 @@ EVT_BUTTON(ID_Button_Shuttle_LWP_Execute, FDSFrame::OnButton_ShuttleLWP_LWP_Exec
 EVT_BUTTON(ID_Button_Shuttle_LTP_Execute, FDSFrame::OnButton_ShuttleLWP_LTP_Execute)
 EVT_BUTTON(ID_Button_ShuttleLWP_Export, FDSFrame::OnButton_ShuttleLWP_Export)
 EVT_BUTTON(ID_Button_ShuttleLWP_SaveStateVector, FDSFrame::OnButtonShuttleLWPSaveStateVector)
+EVT_BUTTON(ID_Button_Shuttle_LWP_Load_Inputs, FDSFrame::OnButtonShuttleLWPLoadInputs)
 EVT_CHOICE(ID_LoadSVPageLabels, FDSFrame::ChangeLoadSVPageLabels)
 EVT_BUTTON(ID_LoadSV_Convert, FDSFrame::OnButtonLoadSVConvert)
 EVT_BUTTON(ID_LoadSV_Save, FDSFrame::OnButton_LoadSV_Save)
@@ -547,6 +551,13 @@ void FDSFrame::AddLWPPage()
     Y += diffY;
     textLWP_Actual_GMTLO = new wxTextCtrl(panel2, wxID_ANY, "", wxPoint(minX, Y),wxDefaultSize, wxTE_READONLY);
     Y += diffY;
+
+    new wxStaticText(panel2, wxID_ANY, "Launch scenario at:", wxPoint(minX, Y + difftext));
+    Y += diffY;
+    new wxStaticText(panel2, wxID_ANY, "T-", wxPoint(minX - 16, Y + difftext));
+    Add(textLWP_Export_T_minus = new wxTextCtrl(panel2, wxID_ANY, "04:00:00.000", wxPoint(minX, Y), wxDefaultSize), "/LWP/Export_T_minus");
+    Y += diffY;
+
     new wxButton(panel2, ID_Button_LWP_LVDC_Export, wxT("Export LVDC"), wxPoint(minX, Y), wxDefaultSize);
 }
 
@@ -638,6 +649,12 @@ void FDSFrame::AddShuttleLWPPage()
     textShuttleLWP_LONGLS->SetToolTip(wxT("Geographic longitude of launch site"));
     new wxStaticText(panel_Init, wxID_ANY, "deg", wxPoint(minX + diffunit, Y + difftext));
     Y += diffY;
+
+    Y += diffY*5;
+
+    new wxButton(panel_Init, ID_Button_Shuttle_LWP_Load_Inputs, wxT("Load Inputs"),
+        wxPoint(minX + diffX, Y), wxDefaultSize);
+
 
     minX += 256;
     Y = minY;
@@ -1163,48 +1180,77 @@ void FDSFrame::AddOMPPage()
         wxPoint(10, 514), wxDefaultSize);
 
     //MCT
-    new wxStaticText(panel3, wxID_ANY, "Maneuver Constraints Table", wxPoint(550, 10));
-    wxPanel *temp = new wxPanel(panel3, wxID_ANY, wxPoint(350, 40), wxSize(650, 300), wxBORDER_SIMPLE);
+
+    minX = 550;
+    Y = 10;
+
+    new wxStaticText(panel3, wxID_ANY, "Maneuver Constraints Table", wxPoint(minX, Y));
+
+    new wxStaticText(panel3, wxID_ANY, "Comment:", wxPoint(minX - 100, 30 + Y + difftext));
+    textOMP_MCT_Comment = new wxTextCtrl(panel3, wxID_ANY, "(null)", wxPoint(550 + diffX - 100, 30 + Y), wxSize(384, -1));
+    textOMP_MCT_Comment->SetToolTip(wxT("Maneuver constraints table comment"));
+
+    wxPanel *temp = new wxPanel(panel3, wxID_ANY, wxPoint(350, 80), wxSize(650, 300), wxBORDER_SIMPLE);
 
     textOMP_MCT_Editor = new wxGrid(temp, wxID_MCT_EDITOR, wxDefaultPosition, wxSize(650, 300));
 
-    textOMP_MCT_Editor->CreateGrid(40, 13);
+    textOMP_MCT_Editor->CreateGrid(40, 22);
 
-    textOMP_MCT_Editor->SetColSize(0, 50);
-    textOMP_MCT_Editor->SetColSize(1, 50);
-    textOMP_MCT_Editor->SetColSize(2, 60);
+    textOMP_MCT_Editor->SetColSize(0, 60);
+    textOMP_MCT_Editor->SetColSize(1, 32);
+    textOMP_MCT_Editor->SetColSize(2, 64);
     textOMP_MCT_Editor->SetColSize(3, 95);
+
+    for (unsigned int i = 0; i < 9; i++)
+    {
+        textOMP_MCT_Editor->SetColSize(4 + i * 2, 40);
+        textOMP_MCT_Editor->SetColSize(5 + i * 2, 72);
+    }
 
     textOMP_MCT_Editor->SetColLabelValue(0, "Name");
     textOMP_MCT_Editor->SetColLabelValue(1, "Type");
     textOMP_MCT_Editor->SetColLabelValue(2, "Threshold");
     textOMP_MCT_Editor->SetColLabelValue(3, "Value");
-    textOMP_MCT_Editor->SetColLabelValue(4, "Secondary 1");
-    textOMP_MCT_Editor->SetColLabelValue(5, "Secondary 2");
-    textOMP_MCT_Editor->SetColLabelValue(6, "Secondary 3");
-    textOMP_MCT_Editor->SetColLabelValue(7, "Secondary 4");
-    textOMP_MCT_Editor->SetColLabelValue(8, "Secondary 5");
-    textOMP_MCT_Editor->SetColLabelValue(9, "Secondary 6");
-    textOMP_MCT_Editor->SetColLabelValue(10, "Secondary 7");
-    textOMP_MCT_Editor->SetColLabelValue(11, "Secondary 8");
-    textOMP_MCT_Editor->SetColLabelValue(12, "Secondary 9");
+    textOMP_MCT_Editor->SetColLabelValue(4, "Sec 1");
+    textOMP_MCT_Editor->SetColLabelValue(5, "Value");
+    textOMP_MCT_Editor->SetColLabelValue(6, "Sec 2");
+    textOMP_MCT_Editor->SetColLabelValue(7, "Value");
+    textOMP_MCT_Editor->SetColLabelValue(8, "Sec 3");
+    textOMP_MCT_Editor->SetColLabelValue(9, "Value");
+    textOMP_MCT_Editor->SetColLabelValue(10, "Sec 4");
+    textOMP_MCT_Editor->SetColLabelValue(11, "Value");
+    textOMP_MCT_Editor->SetColLabelValue(12, "Sec 5");
+    textOMP_MCT_Editor->SetColLabelValue(13, "Value");
+    textOMP_MCT_Editor->SetColLabelValue(14, "Sec 6");
+    textOMP_MCT_Editor->SetColLabelValue(15, "Value");
+    textOMP_MCT_Editor->SetColLabelValue(16, "Sec 7");
+    textOMP_MCT_Editor->SetColLabelValue(17, "Value");
+    textOMP_MCT_Editor->SetColLabelValue(18, "Sec 8");
+    textOMP_MCT_Editor->SetColLabelValue(19, "Value");
+    textOMP_MCT_Editor->SetColLabelValue(20, "Sec 9");
+    textOMP_MCT_Editor->SetColLabelValue(21, "Value");
 
     bMCTWasChanged = false;
 
+    Y = 400;
+
+
     new wxButton(panel3, ID_Button_MCT_Load_Template, wxT("Load Template"),
-        wxPoint(450, 350), wxDefaultSize);
+        wxPoint(450, Y), wxDefaultSize);
 
     new wxButton(panel3, ID_Button_MCT_Delete_Mnvr, wxT("Delete Mnvr"),
-        wxPoint(560, 350), wxDefaultSize);
+        wxPoint(560, Y), wxDefaultSize);
 
     new wxButton(panel3, ID_Button_MCT_Insert_Mnvr, wxT("Insert Mnvr"),
-        wxPoint(660, 350), wxDefaultSize);
+        wxPoint(660, Y), wxDefaultSize);
+
+    Y += 64;
 
     new wxButton(panel3, ID_Button_MCT_Save, wxT("Save"),
-        wxPoint(450, 414), wxDefaultSize);
+        wxPoint(450, Y), wxDefaultSize);
 
     new wxButton(panel3, ID_Button_FDOMFD_Export, wxT("Export for FDO MFD"),
-        wxPoint(550, 414), wxDefaultSize);
+        wxPoint(550, Y), wxDefaultSize);
 }
 
 void FDSFrame::AddSkylabLWPPage()
@@ -2571,7 +2617,12 @@ int FDSFrame::GetInteger(wxTextCtrl* text, const wxString& name, int* val)
 
 int FDSFrame::GetDouble(wxTextCtrl* text, const wxString& name, double* val)
 {
-    if (text->GetValue().ToDouble(val) == false)
+    return GetDouble(text->GetValue(), name, val);
+}
+
+int FDSFrame::GetDouble(const wxString& text, const wxString& name, double* val)
+{
+    if (text.ToDouble(val) == false)
     {
         SetStatusText(name + " has invalid format!");
         return 1;
@@ -2581,7 +2632,12 @@ int FDSFrame::GetDouble(wxTextCtrl* text, const wxString& name, double* val)
 
 int FDSFrame::GetDDDHHMMSS(wxTextCtrl* text, const wxString& name, double* val)
 {
-    wxStringTokenizer tkz(text->GetValue(), ":");
+    return GetDDDHHMMSS(text->GetValue(), name, val);
+}
+
+int FDSFrame::GetDDDHHMMSS(const wxString& text, const wxString& name, double* val)
+{
+    wxStringTokenizer tkz(text, ":");
 
     if (tkz.CountTokens() != 4)
     {
@@ -2643,6 +2699,11 @@ int FDSFrame::GetDDDHHMMSS(wxTextCtrl* text, const wxString& name, double* val)
 
 int FDSFrame::GetHHMMSS(wxTextCtrl* text, const wxString& name, double* val)
 {
+    return GetHHMMSS(text->GetValue(), name, val);
+}
+
+int FDSFrame::GetHHMMSS(const wxString& text, const wxString& name, double* val)
+{
     double sgn, secs;
     int vals[2];
 
@@ -2656,9 +2717,9 @@ int FDSFrame::GetHHMMSS(wxTextCtrl* text, const wxString& name, double* val)
     return 0;
 }
 
-int FDSFrame::ParseTime(wxTextCtrl* text, size_t size, double& sgn, int* vals, double* secs)
+int FDSFrame::ParseTime(const wxString& text, size_t size, double& sgn, int* vals, double* secs)
 {
-    wxStringTokenizer tkz(text->GetValue(), ":");
+    wxStringTokenizer tkz(text, ":");
 
     if (tkz.CountTokens() != size) return 1;
 
@@ -2737,7 +2798,11 @@ void FDSFrame::OnButton_LWP_LVDC_Export(wxCommandEvent& event)
         return;
     }
 
-    if (core->LWPExportForLVDC())
+    std::string inputs[1];
+
+    inputs[0] = StringFromTextBox(textLWP_Export_T_minus);
+
+    if (core->LWPExportForLVDC(inputs))
     {
         SetStatusText("Error exporting LVDC data!");
         return;
@@ -2774,6 +2839,9 @@ void FDSFrame::ViewMCT(const wxString& filepath)
     wxString arr, token;
     wxStringTokenizer tkz;
     unsigned i, j;
+    std::string strtemp;
+    std::vector<std::string> data;
+    OMP::ManeuverConstraintsTableString mct;
 
     // Delete all old lines
     for (i = 0; i < 40; i++)
@@ -2784,52 +2852,66 @@ void FDSFrame::ViewMCT(const wxString& filepath)
         }
     }
 
+    // Convert to strings
     for (i = 0; i < file.GetLineCount(); i++)
     {
-        tkz.SetString(file[i], ";");
-
-        j = 0;
-        while (tkz.HasMoreTokens())
-        {
-            token = tkz.GetNextToken();
-
-            textOMP_MCT_Editor->SetCellValue(i, j, token);
-
-            j++;
-            if (j >= 9) break;
-        }
-        if (i >= 40) break;
+        strtemp = file[i];
+        data.push_back(strtemp);
     }
-
     file.Close();
+
+    // Split up
+    OMP::OrbitalManeuverProcessor::ConvertFileToMCTStrings(data, mct);
+
+    // Assign to text boxes
+    textOMP_MCT_Comment->Clear();
+    textOMP_MCT_Comment->AppendText(mct.Comment);
+
+    for (i = 0; i < mct.Entries.size(); i++)
+    {
+        textOMP_MCT_Editor->SetCellValue(i, 0, mct.Entries[i].Name);
+        textOMP_MCT_Editor->SetCellValue(i, 1, mct.Entries[i].Type);
+        textOMP_MCT_Editor->SetCellValue(i, 2, mct.Entries[i].Threshold);
+        textOMP_MCT_Editor->SetCellValue(i, 3, mct.Entries[i].ThresholdValue);
+        for (j = 0; j < 9; j++)
+        {
+            textOMP_MCT_Editor->SetCellValue(i, 4 + j * 2, mct.Entries[i].Secondary[j]);
+            textOMP_MCT_Editor->SetCellValue(i, 5 + j * 2, mct.Entries[i].SecondaryValues[j]);
+        }
+    }
 }
 
 void FDSFrame::OnButton_Save_MCT(wxCommandEvent& event)
 {
-    std::string line;
-    std::vector<std::string> array;
+    OMP::ManeuverConstraintsTableString mct;
+    OMP::ManeuverConstraintsInput entry;
 
+    // Get comment
+    mct.Comment = textOMP_MCT_Comment->GetLineText(0);
+
+    // Get maneuvers
     unsigned i, j;
 
     for (i = 0; i < 40; i++)
     {
         if (textOMP_MCT_Editor->GetCellValue(i, 0) == "") break;
 
-        line.clear();
-        for (j = 0; j < 13; j++)
+        entry.Name = textOMP_MCT_Editor->GetCellValue(i, 0);
+        entry.Type = textOMP_MCT_Editor->GetCellValue(i, 1);
+        entry.Threshold = textOMP_MCT_Editor->GetCellValue(i, 2);
+        entry.ThresholdValue = textOMP_MCT_Editor->GetCellValue(i, 3);
+
+        for (j = 0; j < 9; j++)
         {
-            if (textOMP_MCT_Editor->GetCellValue(i, j) != "")
-            {
-                if (j != 0)
-                {
-                    line += ";";
-                }
-                line += textOMP_MCT_Editor->GetCellValue(i, j);
-            }
-            else break;
+            entry.Secondary[j] = textOMP_MCT_Editor->GetCellValue(i, 4 + j * 2);
+            entry.SecondaryValues[j] = textOMP_MCT_Editor->GetCellValue(i, 5 + j * 2);
         }
-        array.push_back(line);
+        mct.Entries.push_back(entry);
     }
+
+    // Convert to strings
+    std::vector<std::string> array;
+    OMP::OrbitalManeuverProcessor::ConvertMCTStringsToFile(mct, array);
 
     wxString str = textOMP_MCT->GetLineText(0);
     wxString project = textProjectFile->GetLineText(0);
@@ -2964,8 +3046,8 @@ void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)
         return;
     }
 
-    std::vector<OMP::ManeuverConstraintsInput> ManeuverConstraintsInput;
-    std::vector <OMP::ManeuverConstraints> tab_out;
+    OMP::ManeuverConstraintsTableString ManeuverConstraintsInput;
+    OMP::ManeuverConstraintsTableParsed tab_out;
     std::string errormessage;
 
     if (core->ReadMCTFile(filepath.ToStdString(), ManeuverConstraintsInput))
@@ -3004,15 +3086,15 @@ void FDSFrame::OnButton_FDOMFD_Export(wxCommandEvent& event)
     array.push_back("TARGET " + TargetName.ToStdString());
     array.push_back("NONSPHERICAL 1");
     array.push_back("START_MCT");
-    for (unsigned i = 0; i < tab_out.size(); i++)
+    for (unsigned i = 0; i < tab_out.Entries.size(); i++)
     {
-        line = tab_out[i].name + " " + std::to_string(tab_out[i].type) + " " + std::to_string(tab_out[i].threshold) + " " + std::to_string(tab_out[i].thresh_num);
+        line = tab_out.Entries[i].name + " " + std::to_string(tab_out.Entries[i].type) + " " + std::to_string(tab_out.Entries[i].threshold) + " " + std::to_string(tab_out.Entries[i].thresh_num);
 
         for (unsigned j = 0; j < 4; j++)
         {
-            if (j < tab_out[i].secondaries.size())
+            if (j < tab_out.Entries[i].secondaries.size())
             {
-                line += " " + OMP::GetSecondaryName(tab_out[i].secondaries[j].type) + " " + std::to_string(tab_out[i].secondaries[j].value);
+                line += " " + OMP::GetSecondaryName(tab_out.Entries[i].secondaries[j].type) + " " + std::to_string(tab_out.Entries[i].secondaries[j].value);
             }
             else
             {
@@ -3286,6 +3368,80 @@ void FDSFrame::OnButtonShuttleLWPSaveStateVector(wxCommandEvent& event)
         file.Close();
 
         core->SaveShuttleLWPStateVector(str.ToStdString());
+    }
+}
+
+void FDSFrame::OnButtonShuttleLWPLoadInputs(wxCommandEvent& event)
+{
+    wxFileName fn(wxGetCwd());
+    wxString defaultDir = fn.GetPath();
+
+    wxFileDialog dlg(this, "Open Ascent Design System file to load Shuttle LWP inputs", defaultDir, wxEmptyString, "Ini files (*.ini)|*.ini", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+    if (dlg.ShowModal() == wxID_CANCEL)
+    {
+        return;
+    }
+
+    wxFileConfig config("ADS", wxEmptyString, dlg.GetPath(), wxEmptyString, wxCONFIG_USE_LOCAL_FILE | wxCONFIG_USE_RELATIVE_PATH);
+
+    wxString str;
+    double dTemp;
+
+    LoadChoiceBox(&config, comboShuttleLWP_Launchpad, "General/Launchpad");
+    if (config.Read("General/LATLS", &str))
+    {
+        GetHHMMSS(str, "LATLS", &dTemp);
+        textShuttleLWP_LATLS->SetValue(wxString::Format("%.6lf", dTemp / 3600.0));
+    }
+    if (config.Read("General/LNGLS", &str))
+    {
+        GetHHMMSS(str, "LNGLS", &dTemp);
+        textShuttleLWP_LONGLS->SetValue(wxString::Format("%.6lf", dTemp / 3600.0));
+    }
+    
+    LoadTextCtrl(&config, text_ShuttleLWP_PFA, "General/PFA");
+    LoadTextCtrl(&config, text_ShuttleLWP_PFT, "General/PFT");
+    if (config.Read("General/ALT", &str))
+    {
+        if (GetDouble(str, "RAD", &dTemp) == 0)
+        {
+            // Convert altitude in NM to radius in feet
+            dTemp = (dTemp * 1852.0 + 6378166.0) / 0.3048;
+            text_ShuttleLWP_RAD->SetValue(wxString::Format("%.1lf", dTemp));
+        }
+    }
+    LoadTextCtrl(&config, text_ShuttleLWP_VEL, "General/VEL");
+    LoadTextCtrl(&config, text_ShuttleLWP_FPA, "General/FPA");
+    LoadTextCtrl(&config, textShuttleLWP_ET_Sep_DVX, "General/ET_DVX");
+    LoadTextCtrl(&config, textShuttleLWP_ET_Sep_DVY, "General/ET_DVY");
+    LoadTextCtrl(&config, textShuttleLWP_ET_Sep_DVZ, "General/ET_DVZ");
+    LoadTextCtrl(&config, textShuttleLWP_ET_Sep_DTIG, "General/ET_DTIG");
+    LoadTextCtrl(&config, textShuttleLWP_MPS_Dump_DVX, "General/MPS_DVX");
+    LoadTextCtrl(&config, textShuttleLWP_MPS_Dump_DVY, "General/MPS_DVY");
+    LoadTextCtrl(&config, textShuttleLWP_MPS_Dump_DVZ, "General/MPS_DVZ");
+    LoadTextCtrl(&config, textShuttleLWP_MPS_Dump_DTIG, "General/MPS_DTIG");
+    LoadTextCtrl(&config, textShuttleLWP_ET_CD, "General/ET_CD");
+    LoadTextCtrl(&config, textShuttleLWP_ET_Area, "General/ET_AREA");
+    LoadTextCtrl(&config, textShuttleLWP_ET_WT, "General/ET_WEIGHT");
+    LoadTextCtrl(&config, textShuttleLWP_OMS1_DTIG[0], "General/OMS1_DTIG");
+    LoadTextCtrl(&config, textShuttleLWP_OMS1_C1[0], "General/OMS1_C1");
+    LoadTextCtrl(&config, textShuttleLWP_OMS1_C2[0], "General/OMS1_C2");
+    LoadTextCtrl(&config, textShuttleLWP_OMS1_HT[0], "General/OMS1_HT");
+    LoadTextCtrl(&config, textShuttleLWP_OMS1_THETAT[0], "General/OMS1_THETA");
+    LoadTextCtrl(&config, textShuttleLWP_OMS2_DTIG[0], "General/OMS2_DTIG");
+    LoadTextCtrl(&config, textShuttleLWP_OMS2_C1[0], "General/OMS2_C1");
+    LoadTextCtrl(&config, textShuttleLWP_OMS2_C2[0], "General/OMS2_C2");
+    LoadTextCtrl(&config, textShuttleLWP_OMS2_HT[0], "General/OMS2_HT");
+    LoadTextCtrl(&config, textShuttleLWP_OMS2_THETAT[0], "General/OMS2_THETA");
+
+    if (config.Read("General/DIR", &str))
+    {
+        checkShuttleLWP_LAUNCH_AZ_DIR_FLAG->SetValue(str == "0" ? true : false);
+    }
+    if (config.Read("General/INSERTION_MODE", &str))
+    {
+        checkShuttleLWP_DI->SetValue(str == "1" ? true : false);
     }
 }
 

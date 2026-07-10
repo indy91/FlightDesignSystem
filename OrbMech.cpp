@@ -1776,6 +1776,8 @@ namespace OrbMech
 
 	MATRIX3 GetRotationMatrix(const GlobalConstants& cnst, double t)
 	{
+		// t: MJD in TDB, days
+
 		double L_rel, phi, CL, SL, CP, SP;
 		MATRIX3 Rot3, R_rel, R_rot;
 
@@ -1793,6 +1795,8 @@ namespace OrbMech
 
 	MATRIX3 GetObliquityMatrix(const GlobalConstants& cnst, double t)
 	{
+		// t: MJD in TDB, days
+
 		MATRIX3 Rot, Rot5, Rot6;
 		VECTOR3 s;
 		double e_ecl, L_ecl;

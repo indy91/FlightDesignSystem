@@ -253,16 +253,18 @@ int Core::SaveLWPStateVector(std::string filename)
 	return 1;
 }
 
-int Core::LWPExportForLVDC()
+int Core::LWPExportForLVDC(std::string inputs[])
 {
 	std::ofstream myfile;
 	std::string file;
+	double LaunchScenarioDT;
 
 	if (!Initialized) return 1;
 	if (LWPSummaryTable.Error != 0)
 	{
 		return 1;
 	}
+	if (ParseGMT(inputs[0], LaunchScenarioDT)) return 1;
 
 	file = ProjectFolder + "Outputs/LVDC.txt";
 
@@ -314,7 +316,7 @@ int Core::LWPExportForLVDC()
 	sprintf_s(buf, "%04d-%02d-%02d", sescnst.Year, sescnst.Month, sescnst.Day);
 	myfile << "Saturn IB LVDC targeting for " << buf << std::endl << std::endl;
 
-	myfile << "MJD of T-4h:" << std::endl;
+	myfile << "MJD at T-" + inputs[0] << ":" << std::endl;
 	sprintf_s(buf, "%.9lf", MJDSCEN);
 	myfile << buf << std::endl << std::endl;
 
@@ -861,73 +863,30 @@ int Core::AgeOfStateVector(std::string inputs[], double& age) const
 	return 0;
 }
 
-int Core::ReadMCTFile(std::string file, std::vector<OMP::ManeuverConstraintsInput>& MCT) const
+int Core::ReadMCTFile(std::string file, OMP::ManeuverConstraintsTableString& MCT) const
 {
-	MCT.clear();
+	// INPUTS:
+	// file = file name
+	// OUTPUTS:
+	// MCT = Maneuver Constraints Table in string format
 
 	std::ifstream myfile;
 
 	myfile.open(file);
 	if (myfile.is_open() == false) return 1;
 
+	// Read all lines into array
+	std::vector<std::string> array;
 	std::string line;
-	int i;
-	
-	i = 1;
 
 	while (std::getline(myfile, line))
 	{
-		if (ReadMCTLine(line, MCT))
-		{
-			std::cout << "Error in constraints for maneuver " << i << std::endl;
-			return 1;
-		}
-		i++;
+		array.push_back(line);
 	}
-
 	myfile.close();
-	return 0;
-}
 
-int Core::ReadMCTLine(std::string line, std::vector<OMP::ManeuverConstraintsInput>& MCT) const
-{
-	std::string data[13];
-
-	std::stringstream ss(line);
-	std::string token;
-	std::vector<std::string> tokens;
-	char delimiter = ';';
-
-	while (std::getline(ss, token, delimiter)) {
-		tokens.push_back(token);
-	}
-
-	//Too small?
-	if (tokens.size() < 4) return 1;
-
-	OMP::ManeuverConstraintsInput temp;
-
-	//Parse the individual elements
-	temp.Name = tokens[0];
-	temp.Type = tokens[1];
-	temp.Threshold = tokens[2];
-	temp.ThresholdValue = tokens[3];
-
-	char Buff[5], Buff2[11];
-	sprintf_s(Buff, "");
-	sprintf_s(Buff2, "");
-
-	for (unsigned i = 4; i < tokens.size(); i++)
-	{
-		//Secondaries
-		if (sscanf_s(tokens[i].c_str(), "%[^'=']=%s", Buff, 5, Buff2, 11) != 2) return 2;
-
-		temp.Secondary[i - 4].assign(Buff);
-		temp.SecondaryValues[i - 4].assign(Buff2);
-	}
-
-	MCT.push_back(temp);
-	return 0;
+	// First pass of parsing
+	return OMP::OrbitalManeuverProcessor::ConvertFileToMCTStrings(array, MCT);
 }
 
 bool Core::IsInitialized() const

@@ -68,6 +68,7 @@ public:
     void OnButton_ShuttleLWP_LTP_Execute(wxCommandEvent& event);
     void OnButton_ShuttleLWP_Export(wxCommandEvent& event);
     void OnButtonShuttleLWPSaveStateVector(wxCommandEvent& event);
+    void OnButtonShuttleLWPLoadInputs(wxCommandEvent& event);
     void ChangeLoadSVPageLabels(wxCommandEvent& event);
     void OnButtonLoadSVConvert(wxCommandEvent& event);
     void OnButton_LoadSV_Save(wxCommandEvent& event);
@@ -109,9 +110,12 @@ private:
     // Text parsing
     int GetInteger(wxTextCtrl* text, const wxString& name, int* val);
     int GetDouble(wxTextCtrl* text, const wxString& name, double* val);
+    int GetDouble(const wxString& text, const wxString& name, double* val);
     int GetDDDHHMMSS(wxTextCtrl* text, const wxString& name, double* val);
+    int GetDDDHHMMSS(const wxString& text, const wxString& name, double* val);
     int GetHHMMSS(wxTextCtrl* text, const wxString& name, double* val);
-    int ParseTime(wxTextCtrl* text, size_t size, double& sgn, int* vals, double* secs);
+    int GetHHMMSS(const wxString& text, const wxString& name, double* val);
+    int ParseTime(const wxString& text, size_t size, double& sgn, int* vals, double* secs);
 
     // For save/loading
     void Add(wxTextCtrl* text, const wxString& config);
@@ -176,6 +180,7 @@ private:
     wxChoice* comboLWP_NEGTIV;
     wxTextCtrl* textLWP_WRAP;
     wxTextCtrl* textLWP_Actual_GMTLO;
+    wxTextCtrl* textLWP_Export_T_minus;
 
     //Shuttle LWP init page
     wxTextCtrl* textShuttleLWPTargetVector;
@@ -241,6 +246,7 @@ private:
     wxTextCtrl* textOMP_Chaser;
     wxTextCtrl* textOMP_Target;
     wxTextCtrl* textOMP_MCT;
+    wxTextCtrl* textOMP_MCT_Comment;
     wxGrid* textOMP_MCT_Editor;
     bool bMCTWasChanged;
 

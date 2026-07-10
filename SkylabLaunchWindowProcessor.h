@@ -91,7 +91,7 @@ namespace SkylabLWP
 		SkylabLWPInputs inp;
 
 		// INTERNAL
-		std::vector<OMP::ManeuverConstraints> ManeuverConstraintsTable;
+		OMP::ManeuverConstraintsTableParsed ManeuverConstraintsTable;
 		double GMTLO;
 		OrbMech::StateVector sv_C;
 		//Time of analytical inplane lift-off

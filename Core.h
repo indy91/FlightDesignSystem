@@ -33,7 +33,7 @@ public:
 
 	int RunLWP(std::string inputs[], std::vector<std::vector<std::string>> &data);
 	int SaveLWPStateVector(std::string filename);
-	int LWPExportForLVDC();
+	int LWPExportForLVDC(std::string inputs[]);
 
 	// Shuttle LWP
 	int RunShuttleLWP(bool IsLW, std::string strInputs[], double *dInputs, int *iInputs, std::vector<std::string>& data);
@@ -47,7 +47,7 @@ public:
 	int AgeOfStateVector(std::string inputs[], double& age) const;
 
 	// OMP
-	int ReadMCTFile(std::string file, std::vector<OMP::ManeuverConstraintsInput> &MCT) const;
+	int ReadMCTFile(std::string file, OMP::ManeuverConstraintsTableString &MCT) const;
 
 	// State vector converter
 	int StateVectorConverter(int* iInputs, double* dInputs, std::vector<std::string>& data);
@@ -65,16 +65,13 @@ protected:
 	int SetSessionConstants(int world, int Year, int Month, int Day, double EDT);
 	void SetLaunchTime(int H, int M, double S);
 
-	//OMP
-	int ReadMCTLine(std::string line, std::vector<OMP::ManeuverConstraintsInput>& MCT) const;
-
 	//File parsing
 	void SaveStateVector(std::string file, const OrbMech::StateVector& sv);
 	int LoadStateVector(std::string file, OrbMech::StateVector& sv) const;
 	void StateVectorToString(const OrbMech::StateVector& sv, std::vector<std::string>& data) const;
 
 	//OMP
-	std::vector<OMP::ManeuverConstraintsInput> ManeuverConstraintsInput;
+	OMP::ManeuverConstraintsTableString ManeuverConstraintsInput;
 	std::string OMPChaserFile, OMPTargetFile, OMPMCTFile;
 	OrbMech::StateVector sv_C, sv_T;
 	OMP::OMPOutputs OMPOutput;

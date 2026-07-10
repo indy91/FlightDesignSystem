@@ -325,7 +325,7 @@ namespace SkylabLWP
 
 	void SkylabLaunchWindowProcessor::BuildManeuverConstraintsTable()
 	{
-		ManeuverConstraintsTable.clear();
+		ManeuverConstraintsTable.Entries.clear();
 
 		OMP::ManeuverConstraints temp;
 		OMP::SecData sectemp;
@@ -344,7 +344,7 @@ namespace SkylabLWP
 		sectemp.value = inp.DVSEP.z;
 		temp.secondaries.push_back(sectemp);
 
-		ManeuverConstraintsTable.push_back(temp);
+		ManeuverConstraintsTable.Entries.push_back(temp);
 
 		//NC1
 		temp = OMP::ManeuverConstraints();
@@ -357,7 +357,7 @@ namespace SkylabLWP
 		sectemp.value = 2.0;
 		temp.secondaries.push_back(sectemp);
 
-		ManeuverConstraintsTable.push_back(temp);
+		ManeuverConstraintsTable.Entries.push_back(temp);
 
 		//NH
 		temp = OMP::ManeuverConstraints();
@@ -366,7 +366,7 @@ namespace SkylabLWP
 		temp.thresh_num = (double)inp.MI - 3.5;
 		temp.type = OMP::OMPDefs::MANTYPE::NH;
 
-		ManeuverConstraintsTable.push_back(temp);
+		ManeuverConstraintsTable.Entries.push_back(temp);
 
 		//NCC
 		temp = OMP::ManeuverConstraints();
@@ -379,7 +379,7 @@ namespace SkylabLWP
 		sectemp.value = 20.0;
 		temp.secondaries.push_back(sectemp);
 
-		ManeuverConstraintsTable.push_back(temp);
+		ManeuverConstraintsTable.Entries.push_back(temp);
 
 		//NSR
 		temp = OMP::ManeuverConstraints();
@@ -392,7 +392,7 @@ namespace SkylabLWP
 		sectemp.value = 10.0;
 		temp.secondaries.push_back(sectemp);
 
-		ManeuverConstraintsTable.push_back(temp);
+		ManeuverConstraintsTable.Entries.push_back(temp);
 
 		//TPI
 		temp = OMP::ManeuverConstraints();
@@ -411,7 +411,7 @@ namespace SkylabLWP
 		sectemp.value = -23.0;
 		temp.secondaries.push_back(sectemp);
 
-		ManeuverConstraintsTable.push_back(temp);
+		ManeuverConstraintsTable.Entries.push_back(temp);
 
 		//TPF
 		temp = OMP::ManeuverConstraints();
@@ -420,11 +420,11 @@ namespace SkylabLWP
 		temp.thresh_num = 130.0*OrbMech::RAD;
 		temp.type = OMP::OMPDefs::MANTYPE::TPF;
 
-		ManeuverConstraintsTable.push_back(temp);
+		ManeuverConstraintsTable.Entries.push_back(temp);
 	}
 
 	void SkylabLaunchWindowProcessor::SetMLine(int M)
 	{
-		ManeuverConstraintsTable[2].thresh_num = (double)M - 3.5;
+		ManeuverConstraintsTable.Entries[2].thresh_num = (double)M - 3.5;
 	}
 }
