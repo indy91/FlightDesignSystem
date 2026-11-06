@@ -3475,7 +3475,7 @@ void FDSFrame::ChangeLoadSVPageLabels(wxCommandEvent& event)
         staticLoadSV_Descriptions[6]->SetLabel("L");
         textLoadSV_Array[6]->SetToolTip("Mean anomaly");
     }
-    else if (comboLoadSV_ELSET->GetSelection() == 1)
+    else if (comboLoadSV_ELSET->GetSelection() == 2)
     {
         // Spherical
         staticLoadSV_Descriptions[1]->SetLabel("RAD");
